@@ -1,0 +1,256 @@
+Crie um sistema web completo para o Torneio de Xadrez – SENAI “Morvan Figueiredo” com as seguintes características.
+Stack sugerida: Python 3 + FastAPI + SQLAlchemy + SQLite (ou Node.js + Express + Prisma + SQLite, se preferir) e interface simples com HTML/Tailwind (sem necessidade de React). O projeto deve rodar com um único comando.
+
+1) Objetivo
+
+Gerenciar inscrições e sortear automaticamente chaveamento do torneio (quartas de final, semifinal, final e campeão), respeitando a disponibilidade de cada competidor (período e dias em que está na escola).
+O administrador define os dias/horários exatos das partidas após o sorteio validar que os pares possuem, ao menos, uma interseção de disponibilidade.
+
+2) Dados do competidor (formulário de inscrição)
+
+Campos obrigatórios:
+
+nome (string)
+
+curso (string) – ex.: “LOG T1”, “DEV S4”, etc.
+
+telefone (string, máscara livre)
+
+periodo (enum): manha, tarde, integral
+
+dias_semana (enum múltiplo; salvar como lista ou tabela pivô):
+
+valores possíveis:
+
+segunda a sexta
+
+segunda e terca
+
+quarta e sexta
+
+sexta
+
+Observação: integral significa disponível manhã e tarde nos dias informados.
+
+Validações:
+
+nome, curso, periodo, dias_semana obrigatórios.
+
+periodo ∈ {manha, tarde, integral}
+
+dias_semana ∈ {segunda a sexta, segunda e terca, quarta e sexta, sexta}
+
+3) Banco de dados (SQLite)
+
+Tabelas:
+
+competidores
+
+id (PK)
+
+nome, curso, telefone
+
+periodo (texto)
+
+dias_semana (texto; armazenar como CSV tipo “segunda a sexta” ou tabela filho competidor_dias)
+
+torneios
+
+id (PK), nome, status ∈ {rascunho, sorteado, em_andamento, finalizado}, seed (opcional para sorteio reprodutível), created_at
+
+partidas
+
+id (PK), torneio_id (FK), fase ∈ {oitavas, quartas, semifinal, final},
+
+jogador1_id (FK competidores), jogador2_id (FK competidores ou NULL para bye)
+
+data_hora (datetime, definido pelo admin)
+
+local (texto opcional)
+
+resultado ∈ {j1, j2, empate, pendente} (default pendente)
+
+vencedor_id (FK competidores, nulo até encerrar)
+
+observacoes (texto)
+
+OBS: se a IA preferir normalizar os dias, pode criar tabela competidor_dias (competidor_id, dia_enum), onde dia_enum ∈ {seg, ter, qua, qui, sex} e um mapeamento para os grupos (segunda a sexta, etc.).
+
+4) Importação de dados
+
+Criar endpoint e página para importar CSV com as colunas:
+nome,curso,telefone,periodo,dias_semana
+
+Ex.: linhas vindas da planilha fornecida (exemplos reais):
+
+Enner David Mamani Quispe,LOG T1,11 96549-8578,manha,segunda a sexta
+Wellington de Jesus Andrade,LOG T1,11 94849-0469,manha,segunda a sexta
+Vitor Antonio J. de Souza,DEV S4,11 94947-9289,tarde,segunda a sexta
+Cesar Henry Villalobos Gutierrez,LOG F1,11 94882-9588,tarde,segunda a sexta
+...
+Nicoly Kelly Villalba Gonsalez,2BT 4-6E,11 94880-6988,tarde,quarta e sexta
+...
+Gabriel Pedro de Souza,DEV SESI 4,11 98316-1432,integral,segunda e terca
+...
+Antonio Carlos Coelho Cajutio,AUTOCAD/Excel,11 99264-3674,tarde,sexta
+
+
+Também permitir cadastro manual via formulário.
+
+5) Lógica de disponibilidade
+
+Mapear dias_semana para conjuntos de dias:
+
+segunda a sexta → {seg, ter, qua, qui, sex}
+
+segunda e terca → {seg, ter}
+
+quarta e sexta → {qua, sex}
+
+sexta → {sex}
+
+Mapear periodo:
+
+manha → {manha}
+
+tarde → {tarde}
+
+integral → {manha, tarde}
+
+Compatibilidade entre dois competidores ocorre se houver interseção:
+
+interseção de dias ≠ ∅
+
+interseção de períodos ≠ ∅
+
+O sorteio só forma pares válidos (que tenham interseção). Se o conjunto total não permitir formação perfeita:
+
+permitir bye (passa de fase automaticamente) para o jogador sorteado que não encontrar par compatível;
+
+ou sugerir ao admin mover certos jogadores para um “bloco de disponibilidade” mais amplo (ex.: integral).
+
+6) Sorteio e chaveamento
+
+Página “Sorteio” para o administrador:
+
+Seleciona o torneio (ou cria um novo) e opcionalmente define um seed (inteiro) para sorteio reprodutível.
+
+O sistema cria a estrutura no modelo Copa:
+
+Se houver 8, 16, 32... jogadores, começa em quartas/oitavas conforme necessário.
+
+Se o número for diferente, inserir byes equilibrados na primeira fase.
+
+Algoritmo:
+
+Agrupar competidores por janelas de disponibilidade compatíveis (ex.: “manhã seg-sex”, “tarde seg-sex”, “tarde qua-sex”, “integral seg-ter”, etc.).
+
+Embaralhar dentro de cada grupo (usar random.Random(seed) se seed informado).
+
+Montar pares dentro do mesmo grupo prioritariamente.
+
+Se sobrar alguém no grupo, tentar casar com grupo compatível (ex.: integral seg-ter é compatível com manha seg-sex nos dias seg/ter).
+
+Caso ainda sobre alguém, atribuir bye nessa primeira fase.
+
+Após o sorteio, criar registros em partidas para:
+
+quartas (ou oitavas, conforme a quantidade) com data_hora=NULL
+
+deixar resultado=pendente e vencedor_id=NULL
+
+O admin edita cada partida e define data_hora e local.
+
+7) Fluxo das fases
+
+Quartas → Semifinal → Final geradas automaticamente:
+
+Ao registrar o resultado de uma partida (selecionar vencedor e salvar), o sistema:
+
+preenche vencedor_id na partida atual;
+
+encontra/gera a partida da fase seguinte correspondente (ex.: vencedores Jogo 1 e Jogo 2 se enfrentam);
+
+mantém data_hora=NULL até o admin agendar.
+
+Campeão:
+
+Ao salvar o resultado da Final, marcar o torneio como finalizado e exibir campeão em destaque.
+
+8) Endpoints (exemplos FastAPI)
+
+POST /api/competidores – cria competidor
+
+GET /api/competidores – lista com filtros (periodo, dias_semana)
+
+POST /api/importar – importa CSV
+
+POST /api/torneios – cria torneio
+
+POST /api/torneios/{id}/sorteio?seed=123 – executa sorteio com validação de disponibilidade
+
+GET /api/torneios/{id}/partidas – lista partidas por fase
+
+PATCH /api/partidas/{id} – atualizar data_hora, local, resultado, vencedor_id
+
+GET /api/torneios/{id}/campeao – retorna campeão (quando finalizado)
+
+GET / – dashboard simples com abas: Inscrição, Competidores, Sorteio, Partidas, Ranking
+
+9) Telas
+
+Inscrição (pública)
+
+Form com campos obrigatórios; salva no banco.
+
+Competidores (admin)
+
+Tabela com filtros por período/dias; botão “importar CSV”.
+
+Sorteio (admin)
+
+Selecionar torneio, informar seed, botão “Gerar”.
+
+Mostrar preview do chaveamento (diagrama estilo copa).
+
+Partidas (admin)
+
+Lista por fase (quartas/semis/final), com botões Agendar e Registrar resultado.
+
+Ranking/Resultado (público)
+
+Mostra chaves, próximos jogos e campeão quando houver.
+
+10) Regras de negócio extras
+
+Empate: permitir marcar empate e desempate manual pelo admin (replay, armageddon, etc.).
+
+Telefone: campo não precisa validar máscara, apenas armazenar.
+
+Byes: se houver número ímpar ou incompatibilidade de agenda, insira jogador2_id=NULL, marque como bye e o jogador1 avança.
+
+Logs: salvar observacoes em cada partida para anotações do árbitro.
+
+11) Scripts utilitários
+
+Script seed.py para cadastrar rapidamente exemplos de competidores (pode usar a lista da planilha do usuário).
+
+Script export_csv.py para exportar partidas agendadas.
+
+12) UX rápida
+
+Usar Tailwind CSS para tabelas e botões.
+
+Mostrar “interseção válida” quando dois oponentes compartilham ao menos um dia e um período.
+
+13) Como testar
+
+Executar o app → abrir /admin (ou aba “Competidores”) e importar CSV da planilha.
+
+Criar Torneio 2025 – Xadrez SENAI Morvan.
+
+Ir em Sorteio, informar seed (opcional) e gerar.
+
+Em Partidas, agendar datas/horários (o admin define).
+
+Registrar resultados até a final e ver o campeão no dashboard.

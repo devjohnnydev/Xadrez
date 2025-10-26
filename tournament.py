@@ -1,7 +1,7 @@
 import random
 from typing import List, Tuple, Optional
 from sqlalchemy.orm import Session
-from models import Competidor, Torneio, Partida, Fase, StatusTorneio
+from models import Competidor, Torneio, Partida, Fase, StatusTorneio, Resultado
 from availability import sao_compativeis, obter_chave_disponibilidade
 
 
@@ -89,6 +89,7 @@ def executar_sorteio(db: Session, torneio_id: int, seed: Optional[int] = None) -
     fase_inicial = determinar_fase_inicial(num_total)
     
     ordem = 1
+    partidas_criadas = []
     for j1, j2 in pares:
         partida = Partida(
             torneio_id=torneio_id,
@@ -98,6 +99,7 @@ def executar_sorteio(db: Session, torneio_id: int, seed: Optional[int] = None) -
             ordem=ordem
         )
         db.add(partida)
+        partidas_criadas.append(partida)
         ordem += 1
     
     torneio.status = StatusTorneio.SORTEADO
@@ -105,6 +107,15 @@ def executar_sorteio(db: Session, torneio_id: int, seed: Optional[int] = None) -
         torneio.seed = seed
     
     db.commit()
+    
+    for partida in partidas_criadas:
+        if partida.jogador2_id is None:
+            partida.vencedor_id = partida.jogador1_id
+            partida.resultado = Resultado.J1
+            db.commit()
+            
+            if partida.fase != Fase.FINAL:
+                avancar_vencedor(db, partida.id, partida.jogador1_id)
     
     return {
         "success": True,

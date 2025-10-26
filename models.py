@@ -74,7 +74,7 @@ class Partida(Base):
     id = Column(Integer, primary_key=True, index=True)
     torneio_id = Column(Integer, ForeignKey("torneios.id"), nullable=False)
     fase = Column(SQLEnum(Fase), nullable=False)
-    jogador1_id = Column(Integer, ForeignKey("competidores.id"), nullable=False)
+    jogador1_id = Column(Integer, ForeignKey("competidores.id"), nullable=True)
     jogador2_id = Column(Integer, ForeignKey("competidores.id"), nullable=True)
     data_hora = Column(DateTime, nullable=True)
     local = Column(String, nullable=True)

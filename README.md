@@ -1,149 +1,124 @@
-# Torneio de Xadrez SENAI "Morvan Figueiredo"
+# 🏆 Sistema de Torneio de Xadrez SENAI - Morvan Figueiredo
 
-Sistema web completo para gerenciamento de torneios de xadrez com sorteio automático baseado em compatibilidade de horários dos competidores.
+Sistema completo de gerenciamento de torneios de xadrez com sorteio inteligente baseado em compatibilidade de horários, autenticação administrativa, upload de fotos e identidade visual SENAI.
 
-## Funcionalidades
+## 🎯 Funcionalidades
 
-- ✅ **Cadastro de Competidores**: Formulário web e importação via CSV
-- ✅ **Validação de Disponibilidade**: Sistema inteligente que valida compatibilidade de horários (períodos e dias da semana)
-- ✅ **Sorteio Automático**: Algoritmo que forma pares apenas entre competidores com horários compatíveis
-- ✅ **Chaveamento Estilo Copa**: Geração automática de quartas, semifinais e final
-- ✅ **Gestão de Partidas**: Agendamento de datas, locais e registro de resultados
-- ✅ **Dashboard Completo**: Visualização de inscrições, sorteio, partidas e ranking
+### Para Administradores
+- ✅ **Cadastro de Competidores** com foto, curso, telefone e disponibilidade
+- ✅ **Seleção flexível de dias** via checkboxes (segunda a sexta)
+- ✅ **Importação em massa** via CSV
+- ✅ **Sorteio automático** com validação de compatibilidade de horários
+- ✅ **Gerenciamento de partidas** com agendamento e resultados
+- ✅ **Autenticação segura** com HTTP Basic Auth
 
-## Tecnologias
+### Para Alunos (Área Pública)
+- 📅 **Visualização de próximos jogos** agendados
+- 🏆 **Resultados** de partidas finalizadas
+- 📊 **Chaveamento completo** do torneio
+- 🎖️ **Display de campeão** ao final
 
-- **Backend**: Python 3.11 + FastAPI + SQLAlchemy
-- **Frontend**: HTML + Tailwind CSS + JavaScript
-- **Banco de Dados**: SQLite
+## 🚀 Como Usar
 
-## Como Usar
+### 1️⃣ Acesse o Sistema
+- **Área Pública**: `/` (sem login necessário)
+- **Área Admin**: `/admin` (requer login)
 
-### 1. Executar o Sistema
+### 2️⃣ Login Administrativo
+```
+Usuário: Biblioteca@senaimovanfigueiredo.com.br
+Senha: biblioteca103103
+```
 
-O sistema já está configurado para rodar automaticamente. Basta acessar a interface web.
+### 3️⃣ Cadastrar Competidores
 
-### 2. Cadastrar Competidores
+**Opção A - Via Formulário:**
+1. Acesse "Cadastrar Competidor"
+2. Preencha: nome, curso, telefone
+3. Selecione o período (manhã/tarde/integral)
+4. Marque os dias disponíveis (checkboxes)
+5. Opcionalmente, adicione uma foto
+6. Clique em "Cadastrar"
 
-**Opção 1 - Formulário Web:**
-- Acesse a aba "Inscrição"
-- Preencha os dados do competidor
-- Clique em "Cadastrar Competidor"
+**Opção B - Via CSV:**
+1. Prepare um arquivo CSV com as colunas: `nome,curso,telefone,periodo,dias_semana`
+2. Exemplo:
+```csv
+nome,curso,telefone,periodo,dias_semana
+João Silva,LOG T1,11 98765-4321,manha,seg,ter,qua,qui,sex
+Maria Santos,DEV S4,11 97654-3210,tarde,seg,qua,sex
+```
+3. Clique em "Importar CSV" na aba "Competidores"
 
-**Opção 2 - Importar CSV:**
-- Acesse a aba "Competidores"
-- Clique em "Importar CSV"
-- Selecione um arquivo CSV com o formato:
-  ```
-  nome,curso,telefone,periodo,dias_semana
-  João Silva,LOG T1,11 98765-4321,manha,segunda a sexta
-  Maria Santos,DEV S4,11 97654-3210,tarde,quarta e sexta
-  ```
-
-**Opção 3 - Script de Dados de Exemplo:**
+**Opção C - Script de Dados de Exemplo:**
 ```bash
 python seed.py
 ```
 
-### 3. Criar e Sortear Torneio
+### 4️⃣ Criar e Sortear Torneio
 
-1. Acesse a aba "Sorteio"
-2. Digite o nome do torneio (ex: "Torneio 2025 - Xadrez SENAI Morvan")
-3. Clique em "Criar Torneio"
-4. Opcionalmente, defina um seed para sorteio reprodutível
+1. Acesse "Sorteio"
+2. Digite o nome do torneio e clique em "Criar Torneio"
+3. Selecione o torneio criado
+4. (Opcional) Defina uma seed para sorteio reproduzível
 5. Clique em "Executar Sorteio"
 
-O sistema irá:
-- Agrupar competidores por compatibilidade de horários
-- Formar pares válidos (com interseção de dias e períodos)
-- Atribuir byes quando necessário
-- Gerar o chaveamento completo
+**O sistema irá:**
+- ✅ Verificar compatibilidade de horários entre jogadores
+- ✅ Criar chaveamento automático
+- ✅ Atribuir BYEs quando necessário
+- ✅ Avançar vencedores de BYE automaticamente
 
-### 4. Gerenciar Partidas
+### 5️⃣ Gerenciar Partidas
 
-1. Acesse a aba "Partidas"
+1. Acesse "Gerenciar Partidas"
 2. Selecione o torneio
 3. Para cada partida:
    - Clique em "Agendar Partida"
-   - Defina data, hora e local
-   - Opcionalmente, registre o resultado
-   - O sistema avançará automaticamente o vencedor para a próxima fase
+   - Defina data/hora (formato: YYYY-MM-DD HH:MM)
+   - Defina o local
+   - (Opcional) Registre o resultado
+4. Vencedores avançam automaticamente para a próxima fase
 
-### 5. Visualizar Ranking
+## 🎨 Identidade Visual
 
-1. Acesse a aba "Ranking"
-2. Selecione o torneio
-3. Veja o chaveamento completo e o campeão (quando finalizado)
+- **Cores**: Vermelho SENAI (#E30613) e Branco
+- **Layout**: Responsivo com Tailwind CSS
+- **Fotos**: Exibição circular dos jogadores em toda interface
 
-## Regras de Compatibilidade
+## 📋 Tecnologias
+
+- **Backend**: Python 3.11 + FastAPI + SQLAlchemy
+- **Frontend**: HTML + Tailwind CSS + JavaScript
+- **Banco de Dados**: SQLite
+- **Autenticação**: HTTP Basic Auth
+- **Upload**: FastAPI File Upload
+
+## 🎲 Como Funciona o Sorteio
+
+### Compatibilidade de Horários
+Dois jogadores são compatíveis se compartilham:
+- **Pelo menos 1 dia** em comum (seg, ter, qua, qui, sex)
+- **Pelo menos 1 período** em comum (manhã, tarde ou integral)
+
+**Exemplos:**
+```
+✅ João (manhã, seg-ter-qua) vs Maria (manhã, ter-qui-sex) → Compatíveis (manhã + ter)
+❌ Pedro (manhã, seg-ter) vs Ana (tarde, qua-qui) → Incompatíveis
+✅ Carlos (integral, seg-sex) vs Lucia (tarde, sex) → Compatíveis (tarde + sex)
+```
 
 ### Períodos
 - **Manhã**: disponível apenas no período da manhã
 - **Tarde**: disponível apenas no período da tarde
 - **Integral**: disponível manhã e tarde
 
-### Dias da Semana
-- **Segunda a Sexta**: seg, ter, qua, qui, sex
-- **Segunda e Terça**: seg, ter
-- **Quarta e Sexta**: qua, sex
-- **Sexta**: sex
+### BYEs Automáticos
+- Quando o número de inscritos não é potência de 2 (4, 8, 16, 32...)
+- BYEs são atribuídos na primeira fase
+- Vencedores de BYE avançam automaticamente
 
-**Compatibilidade**: Dois competidores são compatíveis se tiverem ao menos um dia E um período em comum.
-
-**Exemplos:**
-- ✅ Manhã (seg-sex) x Integral (seg-ter) → Compatível (seg e ter pela manhã)
-- ✅ Tarde (qua-sex) x Tarde (sexta) → Compatível (sexta à tarde)
-- ❌ Manhã (seg-sex) x Tarde (seg-sex) → Incompatível (horários diferentes)
-- ❌ Manhã (seg-ter) x Manhã (qua-sex) → Incompatível (sem dias em comum)
-
-## Scripts Utilitários
-
-### Adicionar Dados de Exemplo
-```bash
-python seed.py
-```
-
-### Exportar Partidas Agendadas
-```bash
-# Exportar todas as partidas
-python export_csv.py
-
-# Exportar partidas de um torneio específico
-python export_csv.py 1
-```
-
-## Estrutura do Projeto
-
-```
-.
-├── main.py              # Aplicação FastAPI principal
-├── models.py            # Modelos do banco de dados
-├── availability.py      # Lógica de compatibilidade
-├── tournament.py        # Algoritmo de sorteio e chaveamento
-├── seed.py             # Script para dados de exemplo
-├── export_csv.py       # Exportação de partidas
-├── templates/
-│   └── index.html      # Interface web
-└── torneio_xadrez.db   # Banco de dados SQLite (criado automaticamente)
-```
-
-## Formato CSV para Importação
-
-```csv
-nome,curso,telefone,periodo,dias_semana
-Enner David Mamani Quispe,LOG T1,11 96549-8578,manha,segunda a sexta
-Wellington de Jesus Andrade,LOG T1,11 94849-0469,manha,segunda a sexta
-Vitor Antonio J. de Souza,DEV S4,11 94947-9289,tarde,segunda a sexta
-Nicoly Kelly Villalba Gonsalez,2BT 4-6E,11 94880-6988,tarde,quarta e sexta
-Gabriel Pedro de Souza,DEV SESI 4,11 98316-1432,integral,segunda e terca
-Antonio Carlos Coelho Cajutio,AUTOCAD/Excel,11 99264-3674,tarde,sexta
-```
-
-**Valores válidos:**
-- `periodo`: manha, tarde, integral
-- `dias_semana`: segunda a sexta, segunda e terca, quarta e sexta, sexta
-
-## Fluxo das Fases
+## 📊 Fluxo das Fases
 
 O sistema gerencia automaticamente a progressão das fases:
 
@@ -160,13 +135,76 @@ O sistema gerencia automaticamente a progressão das fases:
 
 3. **Final**: Ao registrar o vencedor da final, o torneio é marcado como finalizado e o campeão é exibido em destaque.
 
-## Byes
+## 🗂️ Estrutura do Projeto
 
-Quando há número ímpar de competidores ou quando não há par compatível para um jogador:
-- O jogador2_id fica NULL
-- O jogador1 avança automaticamente para a próxima fase
-- A partida é marcada como bye na interface
+```
+/
+├── main.py                  # API FastAPI principal
+├── models.py                # Modelos de dados
+├── auth.py                  # Sistema de autenticação
+├── availability.py          # Lógica de compatibilidade
+├── tournament.py            # Algoritmo de sorteio
+├── seed.py                  # Dados de exemplo
+├── export_csv.py            # Exportação de partidas
+├── exemplo_competidores.csv # Exemplo de CSV
+├── templates/
+│   ├── public.html         # Interface pública
+│   └── admin.html          # Interface administrativa
+└── static/
+    └── uploads/            # Fotos dos jogadores
+```
 
-## Desenvolvido para
+## 📝 Scripts Utilitários
 
-SENAI "Morvan Figueiredo"
+### Adicionar Dados de Exemplo
+```bash
+python seed.py
+```
+
+### Exportar Partidas Agendadas
+```bash
+# Exportar todas as partidas
+python export_csv.py
+
+# Exportar partidas de um torneio específico
+python export_csv.py 1
+```
+
+## 🔐 Segurança
+
+- ✅ Autenticação HTTP Basic para área administrativa
+- ✅ Endpoints de modificação protegidos
+- ✅ Área pública sem autenticação (apenas visualização)
+- ✅ Upload de fotos com nomes únicos baseados em timestamp
+
+**Para produção:**
+- Considere hash de senhas (bcrypt)
+- Adicione validação de tipo de arquivo em uploads
+- Configure CORS adequadamente
+- Migre para PostgreSQL
+
+## 🆘 Solução de Problemas
+
+**Erro ao sortear:**
+- Verifique se há competidores cadastrados
+- Certifique-se de que selecionou um torneio
+
+**Partidas não aparecem:**
+- Verifique se o sorteio foi executado
+- Atualize a página
+
+**Foto não aparece:**
+- Verifique se o arquivo é JPG ou PNG
+- Tamanho recomendado: até 5MB
+
+**Não consigo acessar área admin:**
+- Verifique usuário: `Biblioteca@senaimovanfigueiredo.com.br`
+- Verifique senha: `biblioteca103103`
+
+## 🎓 Sobre o SENAI Morvan Figueiredo
+
+Este sistema foi desenvolvido especificamente para o SENAI "Morvan Figueiredo", respeitando a identidade visual da instituição (vermelho e branco) e as necessidades operacionais de torneios internos de xadrez com validação de compatibilidade de horários entre alunos de diferentes cursos e períodos.
+
+---
+
+**Desenvolvido para SENAI - Morvan Figueiredo** 🏆♟️

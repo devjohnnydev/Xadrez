@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneio de Xadrez SENAI - Morvan Figueiredo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'senai-red': '#E30613',
+                        'senai-dark': '#8B0000',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <header class="bg-gradient-to-r from-senai-red to-senai-dark text-white p-8 rounded-lg shadow-2xl mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold">♟️ Torneio de Xadrez</h1>
+                    <p class="text-red-100 mt-2 text-xl">SENAI "Morvan Figueiredo"</p>
+                </div>
+                <div>
+                    <a href="/admin" class="bg-white text-senai-red px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition shadow-lg">
+                        🔐 Área do Administrador
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-2 border-b-2 border-senai-red">
+                <button onclick="showTab('proximos')" id="tab-proximos" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    📅 Próximos Jogos
+                </button>
+                <button onclick="showTab('resultados')" id="tab-resultados" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    🏆 Resultados
+                </button>
+                <button onclick="showTab('chaveamento')" id="tab-chaveamento" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    📊 Chaveamento
+                </button>
+            </div>
+        </div>
+
+        <div id="content-proximos" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-3xl font-bold mb-6 text-senai-red">📅 Próximos Jogos</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Torneio</label>
+                    <select id="torneio-proximos" onchange="carregarProximosJogos()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                        <option value="">Selecione um torneio...</option>
+                    </select>
+                </div>
+
+                <div id="lista-proximos" class="mt-6"></div>
+            </div>
+        </div>
+
+        <div id="content-resultados" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-3xl font-bold mb-6 text-senai-red">🏆 Resultados</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Torneio</label>
+                    <select id="torneio-resultados" onchange="carregarResultados()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                        <option value="">Selecione um torneio...</option>
+                    </select>
+                </div>
+
+                <div id="resultado-campeao"></div>
+                <div id="lista-resultados" class="mt-6"></div>
+            </div>
+        </div>
+
+        <div id="content-chaveamento" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-3xl font-bold mb-6 text-senai-red">📊 Chaveamento Completo</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Torneio</label>
+                    <select id="torneio-chaveamento" onchange="carregarChaveamento()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                        <option value="">Selecione um torneio...</option>
+                    </select>
+                </div>
+
+                <div id="lista-chaveamento"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('text-senai-red', 'border-senai-red');
+                button.classList.add('text-gray-600', 'border-transparent');
+            });
+            
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.remove('text-gray-600', 'border-transparent');
+            document.getElementById('tab-' + tabName).classList.add('text-senai-red', 'border-senai-red');
+
+            if (tabName === 'proximos') {
+                carregarTorneiosProximos();
+            } else if (tabName === 'resultados') {
+                carregarTorneiosResultados();
+            } else if (tabName === 'chaveamento') {
+                carregarTorneiosChaveamento();
+            }
+        }
+
+        async function carregarTorneiosProximos() {
+            try {
+                const response = await fetch('/api/torneios');
+                const torneios = await response.json();
+                const select = document.getElementById('torneio-proximos');
+                select.innerHTML = '<option value="">Selecione um torneio...</option>' +
+                    torneios.map(t => `<option value="${t.id}">${t.nome} (${t.status})</option>`).join('');
+            } catch (error) {
+                console.error('Erro ao carregar torneios:', error);
+            }
+        }
+
+        async function carregarTorneiosResultados() {
+            try {
+                const response = await fetch('/api/torneios');
+                const torneios = await response.json();
+                const select = document.getElementById('torneio-resultados');
+                select.innerHTML = '<option value="">Selecione um torneio...</option>' +
+                    torneios.map(t => `<option value="${t.id}">${t.nome} (${t.status})</option>`).join('');
+            } catch (error) {
+                console.error('Erro ao carregar torneios:', error);
+            }
+        }
+
+        async function carregarTorneiosChaveamento() {
+            try {
+                const response = await fetch('/api/torneios');
+                const torneios = await response.json();
+                const select = document.getElementById('torneio-chaveamento');
+                select.innerHTML = '<option value="">Selecione um torneio...</option>' +
+                    torneios.map(t => `<option value="${t.id}">${t.nome} (${t.status})</option>`).join('');
+            } catch (error) {
+                console.error('Erro ao carregar torneios:', error);
+            }
+        }
+
+        async function carregarProximosJogos() {
+            const torneioId = document.getElementById('torneio-proximos').value;
+            if (!torneioId) {
+                document.getElementById('lista-proximos').innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/torneios/${torneioId}/partidas`);
+                const partidas = await response.json();
+                
+                const proximasPartidas = partidas.filter(p => p.resultado === 'pendente' && !p.is_bye && p.data_hora);
+                
+                if (proximasPartidas.length === 0) {
+                    document.getElementById('lista-proximos').innerHTML = '<p class="text-gray-500 text-center py-8">Nenhum jogo agendado no momento.</p>';
+                    return;
+                }
+
+                let html = '<div class="space-y-4">';
+                proximasPartidas.forEach(p => {
+                    html += `
+                        <div class="border-2 border-senai-red rounded-lg p-6 hover:shadow-lg transition">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-4 mb-4">
+                                        ${p.jogador1_foto ? `<img src="${p.jogador1_foto}" class="w-16 h-16 rounded-full object-cover border-2 border-senai-red">` : '<div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-2xl">👤</div>'}
+                                        <div>
+                                            <p class="font-bold text-lg">${p.jogador1_nome}</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-center text-gray-600 font-semibold my-2">VS</p>
+                                    <div class="flex items-center gap-4">
+                                        ${p.jogador2_foto ? `<img src="${p.jogador2_foto}" class="w-16 h-16 rounded-full object-cover border-2 border-senai-red">` : '<div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-2xl">👤</div>'}
+                                        <div>
+                                            <p class="font-bold text-lg">${p.jogador2_nome}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right ml-6">
+                                    <p class="text-sm font-semibold text-senai-red uppercase">${p.fase}</p>
+                                    <p class="text-2xl font-bold mt-2">📅 ${new Date(p.data_hora).toLocaleDateString('pt-BR')}</p>
+                                    <p class="text-lg">${new Date(p.data_hora).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</p>
+                                    ${p.local ? `<p class="text-sm text-gray-600 mt-2">📍 ${p.local}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                document.getElementById('lista-proximos').innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar próximos jogos:', error);
+            }
+        }
+
+        async function carregarResultados() {
+            const torneioId = document.getElementById('torneio-resultados').value;
+            if (!torneioId) {
+                document.getElementById('resultado-campeao').innerHTML = '';
+                document.getElementById('lista-resultados').innerHTML = '';
+                return;
+            }
+
+            try {
+                const [partidasResp, campeaoResp] = await Promise.all([
+                    fetch(`/api/torneios/${torneioId}/partidas`),
+                    fetch(`/api/torneios/${torneioId}/campeao`)
+                ]);
+
+                const partidas = await partidasResp.json();
+                const campeaoData = await campeaoResp.json();
+
+                if (campeaoData.finalizado && campeaoData.campeao) {
+                    document.getElementById('resultado-campeao').innerHTML = `
+                        <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white p-8 rounded-lg mb-6 text-center shadow-2xl">
+                            <h3 class="text-4xl font-bold mb-4">🏆 CAMPEÃO 🏆</h3>
+                            ${campeaoData.campeao.foto_url ? `<img src="${campeaoData.campeao.foto_url}" class="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-white shadow-lg object-cover">` : ''}
+                            <p class="text-3xl font-bold">${campeaoData.campeao.nome}</p>
+                            <p class="text-xl mt-2">${campeaoData.campeao.curso}</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('resultado-campeao').innerHTML = '';
+                }
+
+                const partidasFinalizadas = partidas.filter(p => p.vencedor_nome);
+                
+                if (partidasFinalizadas.length === 0) {
+                    document.getElementById('lista-resultados').innerHTML = '<p class="text-gray-500 text-center py-8">Nenhum resultado disponível ainda.</p>';
+                    return;
+                }
+
+                let html = '<div class="space-y-4">';
+                partidasFinalizadas.forEach(p => {
+                    html += `
+                        <div class="bg-green-50 border-l-4 border-green-500 rounded-lg p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-senai-red uppercase mb-2">${p.fase}</p>
+                                    <div class="flex items-center gap-3 mb-2">
+                                        ${p.jogador1_foto ? `<img src="${p.jogador1_foto}" class="w-12 h-12 rounded-full object-cover">` : '<div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">👤</div>'}
+                                        <p class="font-semibold ${p.vencedor_nome === p.jogador1_nome ? 'text-green-600 font-bold' : ''}">${p.jogador1_nome}</p>
+                                    </div>
+                                    <p class="text-xs text-gray-600 mb-2">vs</p>
+                                    <div class="flex items-center gap-3">
+                                        ${p.jogador2_foto ? `<img src="${p.jogador2_foto}" class="w-12 h-12 rounded-full object-cover">` : '<div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">👤</div>'}
+                                        <p class="font-semibold ${p.vencedor_nome === p.jogador2_nome ? 'text-green-600 font-bold' : ''}">${p.jogador2_nome || 'BYE'}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-block px-4 py-2 bg-green-600 text-white rounded-full font-bold">
+                                        ✓ Vencedor: ${p.vencedor_nome}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                document.getElementById('lista-resultados').innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar resultados:', error);
+            }
+        }
+
+        async function carregarChaveamento() {
+            const torneioId = document.getElementById('torneio-chaveamento').value;
+            if (!torneioId) {
+                document.getElementById('lista-chaveamento').innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/torneios/${torneioId}/partidas`);
+                const partidas = await response.json();
+
+                const fases = {};
+                partidas.forEach(p => {
+                    if (!fases[p.fase]) fases[p.fase] = [];
+                    fases[p.fase].push(p);
+                });
+
+                let html = '';
+                const ordemFases = ['oitavas', 'quartas', 'semifinal', 'final'];
+                ordemFases.forEach(fase => {
+                    if (fases[fase]) {
+                        html += `
+                            <div class="mb-8">
+                                <h3 class="text-2xl font-bold mb-4 bg-senai-red text-white p-4 rounded-lg">${fase.toUpperCase()}</h3>
+                                <div class="grid gap-4">
+                        `;
+                        
+                        fases[fase].forEach(p => {
+                            html += `
+                                <div class="border-2 ${p.vencedor_nome ? 'border-green-500 bg-green-50' : 'border-gray-300'} rounded-lg p-4">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex-1">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                ${p.jogador1_foto ? `<img src="${p.jogador1_foto}" class="w-10 h-10 rounded-full object-cover">` : '<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm">👤</div>'}
+                                                <span class="${p.vencedor_nome === p.jogador1_nome ? 'font-bold text-green-600' : ''}">${p.jogador1_nome}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                ${p.jogador2_foto ? `<img src="${p.jogador2_foto}" class="w-10 h-10 rounded-full object-cover">` : '<div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm">👤</div>'}
+                                                <span class="${p.vencedor_nome === p.jogador2_nome ? 'font-bold text-green-600' : ''}">${p.jogador2_nome || 'BYE'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            ${p.vencedor_nome ? `<span class="font-bold text-green-600">→ ${p.vencedor_nome}</span>` : '<span class="text-gray-500">Pendente</span>'}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `</div></div>`;
+                    }
+                });
+
+                document.getElementById('lista-chaveamento').innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar chaveamento:', error);
+            }
+        }
+
+        showTab('proximos');
+    </script>
+</body>
+</html>

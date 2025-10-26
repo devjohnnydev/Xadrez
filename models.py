@@ -49,7 +49,8 @@ class Competidor(Base):
     curso = Column(String, nullable=False)
     telefone = Column(String, nullable=False)
     periodo = Column(SQLEnum(Periodo), nullable=False)
-    dias_semana = Column(SQLEnum(DiasSemana), nullable=False)
+    dias_semana = Column(String, nullable=False)
+    foto_url = Column(String, nullable=True)
 
     partidas_j1 = relationship("Partida", foreign_keys="[Partida.jogador1_id]", back_populates="jogador1")
     partidas_j2 = relationship("Partida", foreign_keys="[Partida.jogador2_id]", back_populates="jogador2")

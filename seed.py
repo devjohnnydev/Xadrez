@@ -1,4 +1,4 @@
-from models import init_db, SessionLocal, Competidor, Periodo, DiasSemana
+from models import init_db, SessionLocal, Competidor, Periodo
 
 def seed_competidores():
     init_db()
@@ -10,70 +10,70 @@ def seed_competidores():
             "curso": "LOG T1",
             "telefone": "11 96549-8578",
             "periodo": Periodo.MANHA,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         },
         {
             "nome": "Wellington de Jesus Andrade",
             "curso": "LOG T1",
             "telefone": "11 94849-0469",
             "periodo": Periodo.MANHA,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         },
         {
             "nome": "Vitor Antonio J. de Souza",
             "curso": "DEV S4",
             "telefone": "11 94947-9289",
             "periodo": Periodo.TARDE,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         },
         {
             "nome": "Cesar Henry Villalobos Gutierrez",
             "curso": "LOG F1",
             "telefone": "11 94882-9588",
             "periodo": Periodo.TARDE,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         },
         {
             "nome": "Nicoly Kelly Villalba Gonsalez",
             "curso": "2BT 4-6E",
             "telefone": "11 94880-6988",
             "periodo": Periodo.TARDE,
-            "dias_semana": DiasSemana.QUARTA_E_SEXTA
+            "dias_semana": "qua,sex"
         },
         {
             "nome": "Gabriel Pedro de Souza",
             "curso": "DEV SESI 4",
             "telefone": "11 98316-1432",
             "periodo": Periodo.INTEGRAL,
-            "dias_semana": DiasSemana.SEGUNDA_E_TERCA
+            "dias_semana": "seg,ter"
         },
         {
             "nome": "Antonio Carlos Coelho Cajutio",
             "curso": "AUTOCAD/Excel",
             "telefone": "11 99264-3674",
             "periodo": Periodo.TARDE,
-            "dias_semana": DiasSemana.SEXTA
+            "dias_semana": "sex"
         },
         {
             "nome": "Maria Silva Santos",
             "curso": "LOG T2",
             "telefone": "11 98765-4321",
             "periodo": Periodo.MANHA,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         },
         {
             "nome": "João Pedro Oliveira",
             "curso": "DEV S3",
             "telefone": "11 97654-3210",
             "periodo": Periodo.TARDE,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         },
         {
             "nome": "Ana Carolina Ferreira",
             "curso": "LOG T3",
             "telefone": "11 96543-2109",
             "periodo": Periodo.INTEGRAL,
-            "dias_semana": DiasSemana.SEGUNDA_A_SEXTA
+            "dias_semana": "seg,ter,qua,qui,sex"
         }
     ]
     

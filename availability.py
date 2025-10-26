@@ -1,15 +1,11 @@
 from typing import Set
-from models import Competidor, DiasSemana, Periodo
+from models import Competidor, Periodo
 
 
-def mapear_dias(dias_semana: DiasSemana) -> Set[str]:
-    mapeamento = {
-        DiasSemana.SEGUNDA_A_SEXTA: {"seg", "ter", "qua", "qui", "sex"},
-        DiasSemana.SEGUNDA_E_TERCA: {"seg", "ter"},
-        DiasSemana.QUARTA_E_SEXTA: {"qua", "sex"},
-        DiasSemana.SEXTA: {"sex"},
-    }
-    return mapeamento[dias_semana]
+def mapear_dias_string(dias_semana_str: str) -> Set[str]:
+    if not dias_semana_str:
+        return set()
+    return set(dias_semana_str.split(','))
 
 
 def mapear_periodos(periodo: Periodo) -> Set[str]:
@@ -22,8 +18,8 @@ def mapear_periodos(periodo: Periodo) -> Set[str]:
 
 
 def sao_compativeis(comp1: Competidor, comp2: Competidor) -> bool:
-    dias1 = mapear_dias(comp1.dias_semana)
-    dias2 = mapear_dias(comp2.dias_semana)
+    dias1 = mapear_dias_string(comp1.dias_semana)
+    dias2 = mapear_dias_string(comp2.dias_semana)
     
     periodos1 = mapear_periodos(comp1.periodo)
     periodos2 = mapear_periodos(comp2.periodo)
@@ -35,7 +31,7 @@ def sao_compativeis(comp1: Competidor, comp2: Competidor) -> bool:
 
 
 def obter_chave_disponibilidade(comp: Competidor) -> str:
-    dias = mapear_dias(comp.dias_semana)
+    dias = mapear_dias_string(comp.dias_semana)
     periodos = mapear_periodos(comp.periodo)
     dias_str = "-".join(sorted(dias))
     periodos_str = "-".join(sorted(periodos))

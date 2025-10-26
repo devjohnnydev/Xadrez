@@ -8,16 +8,21 @@ from pydantic import BaseModel
 from datetime import datetime
 import csv
 import io
+import shutil
+import os
+from pathlib import Path
 
 from models import (
     init_db, get_db, Competidor, Torneio, Partida,
-    Periodo, DiasSemana, StatusTorneio, Fase, Resultado
+    Periodo, StatusTorneio, Fase, Resultado
 )
 from tournament import executar_sorteio, avancar_vencedor
 from availability import sao_compativeis
+from auth import verificar_admin
 
 app = FastAPI(title="Torneio de Xadrez SENAI - Morvan Figueiredo")
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 init_db()
@@ -28,7 +33,7 @@ class CompetidorCreate(BaseModel):
     curso: str
     telefone: str
     periodo: Periodo
-    dias_semana: DiasSemana
+    dias_semana: str
 
 
 class CompetidorResponse(BaseModel):
@@ -38,6 +43,7 @@ class CompetidorResponse(BaseModel):
     telefone: str
     periodo: str
     dias_semana: str
+    foto_url: Optional[str]
 
     class Config:
         from_attributes = True
@@ -71,7 +77,9 @@ class PartidaResponse(BaseModel):
     torneio_id: int
     fase: str
     jogador1_nome: str
+    jogador1_foto: Optional[str]
     jogador2_nome: Optional[str]
+    jogador2_foto: Optional[str]
     data_hora: Optional[datetime]
     local: Optional[str]
     resultado: str
@@ -82,13 +90,18 @@ class PartidaResponse(BaseModel):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request, db: Session = Depends(get_db)):
+async def root(request: Request):
+    return templates.TemplateResponse("public.html", {"request": request})
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin(request: Request, admin: str = Depends(verificar_admin), db: Session = Depends(get_db)):
     torneios = db.query(Torneio).order_by(Torneio.created_at.desc()).all()
-    return templates.TemplateResponse("index.html", {"request": request, "torneios": torneios})
+    return templates.TemplateResponse("admin.html", {"request": request, "torneios": torneios, "admin": admin})
 
 
 @app.post("/api/competidores", response_model=CompetidorResponse)
-def criar_competidor(comp: CompetidorCreate, db: Session = Depends(get_db)):
+def criar_competidor(comp: CompetidorCreate, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
     novo_comp = Competidor(
         nome=comp.nome,
         curso=comp.curso,
@@ -102,6 +115,46 @@ def criar_competidor(comp: CompetidorCreate, db: Session = Depends(get_db)):
     return novo_comp
 
 
+@app.post("/api/competidores/form")
+async def criar_competidor_form(
+    nome: str = Form(...),
+    curso: str = Form(...),
+    telefone: str = Form(...),
+    periodo: str = Form(...),
+    dias_semana: str = Form(...),
+    foto: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    admin: str = Depends(verificar_admin)
+):
+    foto_url = None
+    if foto and foto.filename:
+        upload_dir = Path("static/uploads")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_extension = os.path.splitext(foto.filename)[1]
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp}_{nome.replace(' ', '_')}{file_extension}"
+        file_path = upload_dir / filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(foto.file, buffer)
+        
+        foto_url = f"/static/uploads/{filename}"
+    
+    novo_comp = Competidor(
+        nome=nome,
+        curso=curso,
+        telefone=telefone,
+        periodo=Periodo(periodo),
+        dias_semana=dias_semana,
+        foto_url=foto_url
+    )
+    db.add(novo_comp)
+    db.commit()
+    db.refresh(novo_comp)
+    return {"id": novo_comp.id, "nome": novo_comp.nome, "foto_url": foto_url}
+
+
 @app.get("/api/competidores", response_model=List[CompetidorResponse])
 def listar_competidores(
     periodo: Optional[str] = None,
@@ -113,13 +166,13 @@ def listar_competidores(
     if periodo:
         query = query.filter(Competidor.periodo == periodo)
     if dias_semana:
-        query = query.filter(Competidor.dias_semana == dias_semana)
+        query = query.filter(Competidor.dias_semana.contains(dias_semana))
     
     return query.all()
 
 
 @app.post("/api/importar")
-async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
     contents = await file.read()
     decoded = contents.decode('utf-8')
     csv_reader = csv.DictReader(io.StringIO(decoded))
@@ -130,17 +183,19 @@ async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_d
     for row in csv_reader:
         try:
             periodo_str = row['periodo'].strip().lower()
-            dias_str = row['dias_semana'].strip().lower()
+            dias_str = row.get('dias_semana', '').strip()
+            
+            if not dias_str:
+                dias_str = "seg,ter,qua,qui,sex"
             
             periodo = Periodo(periodo_str)
-            dias_semana = DiasSemana(dias_str)
             
             competidor = Competidor(
                 nome=row['nome'].strip(),
                 curso=row['curso'].strip(),
                 telefone=row['telefone'].strip(),
                 periodo=periodo,
-                dias_semana=dias_semana
+                dias_semana=dias_str
             )
             db.add(competidor)
             importados += 1
@@ -156,7 +211,7 @@ async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_d
 
 
 @app.post("/api/torneios", response_model=TorneioResponse)
-def criar_torneio(torneio: TorneioCreate, db: Session = Depends(get_db)):
+def criar_torneio(torneio: TorneioCreate, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
     novo_torneio = Torneio(
         nome=torneio.nome,
         status=StatusTorneio.RASCUNHO
@@ -173,7 +228,7 @@ def listar_torneios(db: Session = Depends(get_db)):
 
 
 @app.post("/api/torneios/{torneio_id}/sorteio")
-def sortear_torneio(torneio_id: int, seed: Optional[int] = None, db: Session = Depends(get_db)):
+def sortear_torneio(torneio_id: int, seed: Optional[int] = None, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
     resultado = executar_sorteio(db, torneio_id, seed)
     if "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
@@ -195,7 +250,9 @@ def listar_partidas(torneio_id: int, db: Session = Depends(get_db)):
             torneio_id=partida.torneio_id,
             fase=partida.fase.value,
             jogador1_nome=jogador1.nome if jogador1 else "N/A",
+            jogador1_foto=jogador1.foto_url if jogador1 else None,
             jogador2_nome=jogador2.nome if jogador2 else None,
+            jogador2_foto=jogador2.foto_url if jogador2 else None,
             data_hora=partida.data_hora,
             local=partida.local,
             resultado=partida.resultado.value,
@@ -209,7 +266,7 @@ def listar_partidas(torneio_id: int, db: Session = Depends(get_db)):
 
 
 @app.patch("/api/partidas/{partida_id}")
-def atualizar_partida(partida_id: int, update: PartidaUpdate, db: Session = Depends(get_db)):
+def atualizar_partida(partida_id: int, update: PartidaUpdate, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
     partida = db.query(Partida).filter(Partida.id == partida_id).first()
     if not partida:
         raise HTTPException(status_code=404, detail="Partida não encontrada")
@@ -252,7 +309,8 @@ def obter_campeao(torneio_id: int, db: Session = Depends(get_db)):
             "campeao": {
                 "id": campeao.id,
                 "nome": campeao.nome,
-                "curso": campeao.curso
+                "curso": campeao.curso,
+                "foto_url": campeao.foto_url
             },
             "finalizado": True
         }
@@ -261,7 +319,7 @@ def obter_campeao(torneio_id: int, db: Session = Depends(get_db)):
 
 
 @app.delete("/api/competidores/{competidor_id}")
-def deletar_competidor(competidor_id: int, db: Session = Depends(get_db)):
+def deletar_competidor(competidor_id: int, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
     competidor = db.query(Competidor).filter(Competidor.id == competidor_id).first()
     if not competidor:
         raise HTTPException(status_code=404, detail="Competidor não encontrado")

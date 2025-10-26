@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Torneio de Xadrez SENAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'senai-red': '#E30613',
+                        'senai-dark': '#8B0000',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <header class="bg-gradient-to-r from-senai-red to-senai-dark text-white p-8 rounded-lg shadow-2xl mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold">🔐 Área do Administrador</h1>
+                    <p class="text-red-100 mt-2 text-xl">SENAI "Morvan Figueiredo" - Gerenciamento do Torneio</p>
+                </div>
+                <div>
+                    <a href="/" class="bg-white text-senai-red px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition shadow-lg">
+                        ← Voltar para Área Pública
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-2 border-b-2 border-senai-red">
+                <button onclick="showTab('inscricao')" id="tab-inscricao" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    📝 Cadastrar Competidor
+                </button>
+                <button onclick="showTab('competidores')" id="tab-competidores" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    👥 Competidores
+                </button>
+                <button onclick="showTab('sorteio')" id="tab-sorteio" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    🎲 Sorteio
+                </button>
+                <button onclick="showTab('partidas')" id="tab-partidas" class="tab-button px-6 py-3 font-semibold text-gray-600 hover:text-senai-red border-b-4 border-transparent hover:border-senai-red">
+                    🏆 Gerenciar Partidas
+                </button>
+            </div>
+        </div>
+
+        <div id="content-inscricao" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold mb-4 text-senai-red">📝 Cadastrar Novo Competidor</h2>
+                <form id="form-inscricao" enctype="multipart/form-data" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo *</label>
+                        <input type="text" id="nome" name="nome" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Curso *</label>
+                        <input type="text" id="curso" name="curso" required placeholder="Ex: LOG T1, DEV S4" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Telefone *</label>
+                        <input type="text" id="telefone" name="telefone" required placeholder="Ex: 11 96549-8578" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Foto do Competidor</label>
+                        <input type="file" id="foto" name="foto" accept="image/*" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Formatos aceitos: JPG, PNG (opcional)</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Período *</label>
+                        <select id="periodo" name="periodo" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent">
+                            <option value="">Selecione...</option>
+                            <option value="manha">Manhã</option>
+                            <option value="tarde">Tarde</option>
+                            <option value="integral">Integral (Manhã e Tarde)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Dias da Semana Disponíveis *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                <input type="checkbox" name="dia" value="seg" class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
+                                <span class="font-medium">Segunda</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                <input type="checkbox" name="dia" value="ter" class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
+                                <span class="font-medium">Terça</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                <input type="checkbox" name="dia" value="qua" class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
+                                <span class="font-medium">Quarta</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                <input type="checkbox" name="dia" value="qui" class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
+                                <span class="font-medium">Quinta</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                <input type="checkbox" name="dia" value="sex" class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
+                                <span class="font-medium">Sexta</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Selecione os dias em que o competidor está disponível</p>
+                    </div>
+                    <button type="submit" class="w-full bg-senai-red text-white py-3 rounded-lg font-semibold hover:bg-senai-dark transition shadow-lg">
+                        Cadastrar Competidor
+                    </button>
+                </form>
+                <div id="msg-inscricao" class="mt-4"></div>
+            </div>
+        </div>
+
+        <div id="content-competidores" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-senai-red">👥 Lista de Competidores</h2>
+                    <div class="flex gap-2">
+                        <button onclick="document.getElementById('file-csv').click()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-lg">
+                            📄 Importar CSV
+                        </button>
+                        <input type="file" id="file-csv" accept=".csv" style="display: none" onchange="importarCSV(event)">
+                        <button onclick="carregarCompetidores()" class="bg-senai-red text-white px-4 py-2 rounded-lg hover:bg-senai-dark transition shadow-lg">
+                            🔄 Atualizar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-4 flex gap-4">
+                    <select id="filtro-periodo" onchange="carregarCompetidores()" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red">
+                        <option value="">Todos os períodos</option>
+                        <option value="manha">Manhã</option>
+                        <option value="tarde">Tarde</option>
+                        <option value="integral">Integral</option>
+                    </select>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-senai-red text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Foto</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Nome</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Curso</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Telefone</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Período</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Dias</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-competidores" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="content-sorteio" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold mb-4 text-senai-red">🎲 Sorteio do Torneio</h2>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Selecionar Torneio</label>
+                    <select id="torneio-select" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-senai-red">
+                        <option value="">Selecione um torneio...</option>
+                    </select>
+                    
+                    <div class="flex gap-4 mb-4">
+                        <input type="text" id="novo-torneio" placeholder="Nome do novo torneio" class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red">
+                        <button onclick="criarTorneio()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition shadow-lg">
+                            Criar Torneio
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Seed (opcional - para sorteio reprodutível)</label>
+                        <input type="number" id="seed-sorteio" placeholder="Ex: 123" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red">
+                    </div>
+
+                    <button onclick="executarSorteio()" class="w-full bg-senai-red text-white py-3 rounded-lg font-semibold hover:bg-senai-dark transition shadow-lg">
+                        🎲 Executar Sorteio
+                    </button>
+                </div>
+
+                <div id="resultado-sorteio" class="mt-6"></div>
+            </div>
+        </div>
+
+        <div id="content-partidas" class="tab-content hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-senai-red">🏆 Gerenciar Partidas do Torneio</h2>
+                    <button onclick="carregarPartidas()" class="bg-senai-red text-white px-4 py-2 rounded-lg hover:bg-senai-dark transition shadow-lg">
+                        🔄 Atualizar
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Torneio</label>
+                    <select id="torneio-partidas" onchange="carregarPartidas()" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red">
+                        <option value="">Selecione um torneio...</option>
+                    </select>
+                </div>
+
+                <div id="lista-partidas"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getAuthHeaders() {
+            const authHeader = document.querySelector('meta[name="authorization"]');
+            if (authHeader) {
+                return { 'Authorization': authHeader.content };
+            }
+            return {};
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('text-senai-red', 'border-senai-red');
+                button.classList.add('text-gray-600', 'border-transparent');
+            });
+            
+            document.getElementById('content-' + tabName).classList.remove('hidden');
+            document.getElementById('tab-' + tabName).classList.remove('text-gray-600', 'border-transparent');
+            document.getElementById('tab-' + tabName).classList.add('text-senai-red', 'border-senai-red');
+
+            if (tabName === 'competidores') {
+                carregarCompetidores();
+            } else if (tabName === 'sorteio') {
+                carregarTorneios();
+            } else if (tabName === 'partidas') {
+                carregarTorneiosPartidas();
+            }
+        }
+
+        document.getElementById('form-inscricao').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const checkboxes = document.querySelectorAll('input[name="dia"]:checked');
+            if (checkboxes.length === 0) {
+                alert('Selecione pelo menos um dia da semana!');
+                return;
+            }
+            
+            const diasSelecionados = Array.from(checkboxes).map(cb => cb.value).join(',');
+            
+            const formData = new FormData();
+            formData.append('nome', document.getElementById('nome').value);
+            formData.append('curso', document.getElementById('curso').value);
+            formData.append('telefone', document.getElementById('telefone').value);
+            formData.append('periodo', document.getElementById('periodo').value);
+            formData.append('dias_semana', diasSelecionados);
+            
+            const fotoInput = document.getElementById('foto');
+            if (fotoInput.files.length > 0) {
+                formData.append('foto', fotoInput.files[0]);
+            }
+
+            try {
+                const response = await fetch('/api/competidores/form', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    document.getElementById('msg-inscricao').innerHTML = '<div class="bg-green-100 border-2 border-green-400 text-green-700 px-4 py-3 rounded-lg font-semibold">✓ Competidor cadastrado com sucesso!</div>';
+                    document.getElementById('form-inscricao').reset();
+                } else {
+                    throw new Error('Erro ao cadastrar');
+                }
+            } catch (error) {
+                document.getElementById('msg-inscricao').innerHTML = '<div class="bg-red-100 border-2 border-red-400 text-red-700 px-4 py-3 rounded-lg font-semibold">✗ Erro ao realizar cadastro. Verifique os dados e tente novamente.</div>';
+            }
+        });
+
+        async function carregarCompetidores() {
+            const periodo = document.getElementById('filtro-periodo').value;
+            
+            let url = '/api/competidores?';
+            if (periodo) url += `periodo=${periodo}&`;
+
+            try {
+                const response = await fetch(url);
+                const competidores = await response.json();
+
+                const tbody = document.getElementById('lista-competidores');
+                tbody.innerHTML = competidores.map(comp => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3">
+                            ${comp.foto_url ? `<img src="${comp.foto_url}" class="w-12 h-12 rounded-full object-cover border-2 border-senai-red">` : '<div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">👤</div>'}
+                        </td>
+                        <td class="px-4 py-3 font-semibold">${comp.nome}</td>
+                        <td class="px-4 py-3">${comp.curso}</td>
+                        <td class="px-4 py-3">${comp.telefone}</td>
+                        <td class="px-4 py-3"><span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">${comp.periodo}</span></td>
+                        <td class="px-4 py-3"><span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">${comp.dias_semana}</span></td>
+                        <td class="px-4 py-3">
+                            <button onclick="deletarCompetidor(${comp.id})" class="text-red-600 hover:text-red-800 font-semibold">
+                                🗑️ Excluir
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Erro ao carregar competidores:', error);
+            }
+        }
+
+        async function deletarCompetidor(id) {
+            if (!confirm('Tem certeza que deseja excluir este competidor?')) return;
+            
+            try {
+                await fetch(`/api/competidores/${id}`, { method: 'DELETE' });
+                carregarCompetidores();
+            } catch (error) {
+                alert('Erro ao excluir competidor');
+            }
+        }
+
+        async function importarCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/importar', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                alert(`Importação concluída!\nImportados: ${result.importados}\nErros: ${result.erros.length}`);
+                
+                if (result.erros.length > 0) {
+                    console.error('Erros na importação:', result.erros);
+                }
+                
+                carregarCompetidores();
+            } catch (error) {
+                alert('Erro ao importar CSV');
+            }
+        }
+
+        async function carregarTorneios() {
+            try {
+                const response = await fetch('/api/torneios');
+                const torneios = await response.json();
+                
+                const select = document.getElementById('torneio-select');
+                select.innerHTML = '<option value="">Selecione um torneio...</option>' +
+                    torneios.map(t => `<option value="${t.id}">${t.nome} (${t.status})</option>`).join('');
+            } catch (error) {
+                console.error('Erro ao carregar torneios:', error);
+            }
+        }
+
+        async function carregarTorneiosPartidas() {
+            try {
+                const response = await fetch('/api/torneios');
+                const torneios = await response.json();
+                
+                const select = document.getElementById('torneio-partidas');
+                select.innerHTML = '<option value="">Selecione um torneio...</option>' +
+                    torneios.map(t => `<option value="${t.id}">${t.nome} (${t.status})</option>`).join('');
+            } catch (error) {
+                console.error('Erro ao carregar torneios:', error);
+            }
+        }
+
+        async function criarTorneio() {
+            const nome = document.getElementById('novo-torneio').value;
+            if (!nome) {
+                alert('Digite o nome do torneio');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/torneios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome })
+                });
+
+                if (response.ok) {
+                    document.getElementById('novo-torneio').value = '';
+                    carregarTorneios();
+                    alert('Torneio criado com sucesso!');
+                }
+            } catch (error) {
+                alert('Erro ao criar torneio');
+            }
+        }
+
+        async function executarSorteio() {
+            const torneioId = document.getElementById('torneio-select').value;
+            if (!torneioId) {
+                alert('Selecione um torneio');
+                return;
+            }
+
+            const seed = document.getElementById('seed-sorteio').value;
+            let url = `/api/torneios/${torneioId}/sorteio`;
+            if (seed) url += `?seed=${seed}`;
+
+            try {
+                const response = await fetch(url, { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('resultado-sorteio').innerHTML = `
+                        <div class="bg-green-100 border-2 border-green-400 text-green-700 px-6 py-4 rounded-lg">
+                            <h3 class="font-bold text-lg mb-2">✓ Sorteio realizado com sucesso!</h3>
+                            <p><strong>Fase inicial:</strong> ${result.fase_inicial}</p>
+                            <p><strong>Número de partidas:</strong> ${result.num_partidas}</p>
+                            <p><strong>Byes automáticos:</strong> ${result.num_byes}</p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.detail || 'Erro no sorteio');
+                }
+            } catch (error) {
+                document.getElementById('resultado-sorteio').innerHTML = `
+                    <div class="bg-red-100 border-2 border-red-400 text-red-700 px-6 py-4 rounded-lg font-semibold">
+                        ✗ Erro ao executar sorteio: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function carregarPartidas() {
+            const torneioId = document.getElementById('torneio-partidas').value;
+            if (!torneioId) {
+                document.getElementById('lista-partidas').innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/torneios/${torneioId}/partidas`);
+                const partidas = await response.json();
+
+                const fases = {};
+                partidas.forEach(p => {
+                    if (!fases[p.fase]) fases[p.fase] = [];
+                    fases[p.fase].push(p);
+                });
+
+                let html = '';
+                Object.keys(fases).forEach(fase => {
+                    html += `
+                        <div class="mb-6">
+                            <h3 class="text-xl font-bold mb-4 bg-senai-red text-white p-3 rounded-lg">${fase.toUpperCase()}</h3>
+                            <div class="space-y-4">
+                    `;
+                    
+                    fases[fase].forEach(p => {
+                        const statusClass = p.resultado === 'pendente' ? 'bg-yellow-50 border-yellow-300' : 'bg-green-50 border-green-300';
+                        html += `
+                            <div class="${statusClass} border-2 p-4 rounded-lg">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            ${p.jogador1_foto ? `<img src="${p.jogador1_foto}" class="w-12 h-12 rounded-full object-cover border-2 border-senai-red">` : '<div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">👤</div>'}
+                                            <p class="font-semibold">${p.jogador1_nome}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-600 ml-15">vs</p>
+                                        <div class="flex items-center gap-3">
+                                            ${p.jogador2_foto ? `<img src="${p.jogador2_foto}" class="w-12 h-12 rounded-full object-cover border-2 border-senai-red">` : '<div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">👤</div>'}
+                                            <p class="font-semibold">${p.jogador2_nome || 'BYE (passa automaticamente)'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        ${p.vencedor_nome ? `<span class="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold">Vencedor: ${p.vencedor_nome}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="border-t-2 pt-3 mt-3">
+                                    <button onclick="abrirModalPartida(${p.id}, '${p.jogador1_nome}', '${p.jogador2_nome || ''}', ${p.is_bye})" 
+                                            class="bg-senai-red text-white px-4 py-2 rounded-lg hover:bg-senai-dark transition font-semibold shadow-lg">
+                                        ${p.data_hora ? '✏️ Editar' : '📅 Agendar'} Partida
+                                    </button>
+                                    ${p.data_hora ? `<span class="ml-4 text-sm text-gray-600 font-semibold">📅 ${new Date(p.data_hora).toLocaleString('pt-BR')}</span>` : ''}
+                                    ${p.local ? `<span class="ml-4 text-sm text-gray-600">📍 ${p.local}</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div></div>`;
+                });
+
+                document.getElementById('lista-partidas').innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao carregar partidas:', error);
+            }
+        }
+
+        function abrirModalPartida(id, j1, j2, isBye) {
+            const dataHora = prompt('Data e hora (formato: YYYY-MM-DD HH:MM):', new Date().toISOString().slice(0, 16).replace('T', ' '));
+            if (!dataHora) return;
+
+            const local = prompt('Local da partida:', 'SENAI Morvan Figueiredo');
+            
+            let vencedorId = null;
+            if (!isBye && confirm('Deseja registrar o resultado agora?')) {
+                const vencedor = prompt(`Quem venceu?\n1 - ${j1}\n2 - ${j2}\n3 - Empate`, '');
+                if (vencedor === '1' || vencedor === '2') {
+                    vencedorId = vencedor === '1' ? 'j1' : 'j2';
+                } else if (vencedor === '3') {
+                    vencedorId = 'empate';
+                }
+            }
+
+            atualizarPartida(id, dataHora, local, vencedorId);
+        }
+
+        async function atualizarPartida(id, dataHora, local, resultado) {
+            try {
+                const body = {
+                    data_hora: dataHora,
+                    local: local
+                };
+
+                if (resultado) {
+                    body.resultado = resultado;
+                }
+
+                const response = await fetch(`/api/partidas/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    alert('Partida atualizada com sucesso!');
+                    carregarPartidas();
+                }
+            } catch (error) {
+                alert('Erro ao atualizar partida');
+            }
+        }
+
+        showTab('inscricao');
+    </script>
+</body>
+</html>

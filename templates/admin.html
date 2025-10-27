@@ -180,11 +180,19 @@
                     </div>
 
                     <div class="mb-4">
+                        <button onclick="verificarCompatibilidade()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-lg mb-4">
+                            🔍 Verificar Compatibilidade de Horários
+                        </button>
+                    </div>
+
+                    <div id="compatibilidade-resultado" class="mb-4"></div>
+
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Seed (opcional - para sorteio reprodutível)</label>
                         <input type="number" id="seed-sorteio" placeholder="Ex: 123" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red">
                     </div>
 
-                    <button onclick="executarSorteio()" class="w-full bg-senai-red text-white py-3 rounded-lg font-semibold hover:bg-senai-dark transition shadow-lg">
+                    <button onclick="executarSorteio(false)" class="w-full bg-senai-red text-white py-3 rounded-lg font-semibold hover:bg-senai-dark transition shadow-lg">
                         🎲 Executar Sorteio
                     </button>
                 </div>
@@ -405,7 +413,57 @@
             }
         }
 
-        async function executarSorteio() {
+        async function verificarCompatibilidade() {
+            try {
+                const response = await fetch('/api/competidores/compatibilidade');
+                const result = await response.json();
+
+                if (result.error) {
+                    document.getElementById('compatibilidade-resultado').innerHTML = `
+                        <div class="bg-red-100 border-2 border-red-400 text-red-700 px-6 py-4 rounded-lg">
+                            <p class="font-semibold">⚠️ ${result.error}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="bg-blue-50 border-2 border-blue-400 text-blue-900 px-6 py-4 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2">📊 Relatório de Compatibilidade</h3>
+                        <p><strong>Total de competidores:</strong> ${result.total_competidores}</p>
+                `;
+
+                if (result.competidores_sem_par && result.competidores_sem_par.length > 0) {
+                    html += `
+                        <div class="mt-4 bg-red-100 border-l-4 border-red-500 p-4 rounded">
+                            <p class="font-bold text-red-800 mb-2">⚠️ Competidores sem horários compatíveis com ninguém:</p>
+                            <ul class="list-disc ml-6 space-y-1 text-sm">
+                    `;
+                    result.competidores_sem_par.forEach(c => {
+                        html += `<li><strong>${c.nome}</strong> - ${c.periodo} (${c.dias_semana})</li>`;
+                    });
+                    html += `
+                            </ul>
+                            <p class="mt-3 text-red-700 font-semibold">⚠️ O sorteio não pode ser realizado. Ajuste os horários destes competidores.</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="mt-4 bg-green-100 border-l-4 border-green-500 p-4 rounded">
+                            <p class="font-bold text-green-800">✓ Todos os competidores têm pelo menos um horário compatível!</p>
+                            <p class="text-green-700 mt-2">O sorteio pode ser realizado normalmente.</p>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+                document.getElementById('compatibilidade-resultado').innerHTML = html;
+            } catch (error) {
+                console.error('Erro ao verificar compatibilidade:', error);
+            }
+        }
+
+        async function executarSorteio(force = false) {
             const torneioId = document.getElementById('torneio-select').value;
             if (!torneioId) {
                 alert('Selecione um torneio');
@@ -413,8 +471,8 @@
             }
 
             const seed = document.getElementById('seed-sorteio').value;
-            let url = `/api/torneios/${torneioId}/sorteio`;
-            if (seed) url += `?seed=${seed}`;
+            let url = `/api/torneios/${torneioId}/sorteio?force=${force}`;
+            if (seed) url += `&seed=${seed}`;
 
             try {
                 const response = await fetch(url, { method: 'POST' });
@@ -429,8 +487,40 @@
                             <p><strong>Byes automáticos:</strong> ${result.num_byes}</p>
                         </div>
                     `;
+                    document.getElementById('compatibilidade-resultado').innerHTML = '';
+                } else if (result.error && result.compatibilidade) {
+                    let html = `
+                        <div class="bg-red-100 border-2 border-red-400 text-red-900 px-6 py-4 rounded-lg">
+                            <h3 class="font-bold text-lg mb-2">⚠️ ${result.error}</h3>
+                    `;
+                    
+                    if (result.compatibilidade.competidores_sem_par.length > 0) {
+                        html += `
+                            <div class="mt-3">
+                                <p class="font-semibold mb-2">Competidores que precisam ajustar horários:</p>
+                                <ul class="list-disc ml-6 space-y-1 text-sm">
+                        `;
+                        result.compatibilidade.competidores_sem_par.forEach(c => {
+                            html += `<li><strong>${c.nome}</strong> - ${c.periodo} (${c.dias_semana})</li>`;
+                        });
+                        html += `
+                                </ul>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `
+                            <div class="mt-4">
+                                <button onclick="executarSorteio(true)" class="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition">
+                                    ⚠️ Forçar Sorteio Mesmo Assim
+                                </button>
+                                <p class="text-xs text-gray-600 mt-2">Não recomendado: alguns jogos podem não ter horários compatíveis</p>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('resultado-sorteio').innerHTML = html;
                 } else {
-                    throw new Error(result.detail || 'Erro no sorteio');
+                    throw new Error(result.error || result.detail || 'Erro no sorteio');
                 }
             } catch (error) {
                 document.getElementById('resultado-sorteio').innerHTML = `
@@ -487,7 +577,7 @@
                                     </div>
                                 </div>
                                 <div class="border-t-2 pt-3 mt-3">
-                                    <button onclick="abrirModalPartida(${p.id}, '${p.jogador1_nome}', '${p.jogador2_nome || ''}', ${p.is_bye})" 
+                                    <button onclick="abrirModalPartida(${p.id}, '${p.jogador1_nome}', '${p.jogador2_nome || ''}', ${p.is_bye}, '${p.data_hora || ''}', '${p.local || ''}')" 
                                             class="bg-senai-red text-white px-4 py-2 rounded-lg hover:bg-senai-dark transition font-semibold shadow-lg">
                                         ${p.data_hora ? '✏️ Editar' : '📅 Agendar'} Partida
                                     </button>
@@ -517,12 +607,19 @@
             }
         }
 
-        function abrirModalPartida(id, j1, j2, isBye) {
+        function abrirModalPartida(id, j1, j2, isBye, dataHoraExistente, localExistente) {
+            const dataHoraValue = dataHoraExistente ? new Date(dataHoraExistente).toISOString().slice(0, 16) : new Date(Date.now() + 86400000).toISOString().slice(0, 16);
+            const localValue = localExistente || 'SENAI Morvan Figueiredo';
+            
+            const agora = new Date();
+            const dataPartida = dataHoraExistente ? new Date(dataHoraExistente) : null;
+            const podeRegistrarResultado = dataPartida && dataPartida <= agora;
+            
             const modalHtml = `
                 <div id="modal-partida" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div class="bg-gradient-to-r from-senai-red to-senai-dark text-white p-6 rounded-t-2xl">
-                            <h3 class="text-2xl font-bold">📅 Agendar Partida</h3>
+                            <h3 class="text-2xl font-bold">📅 ${dataHoraExistente ? 'Editar' : 'Agendar'} Partida</h3>
                             <p class="text-red-100 mt-1">${j1} vs ${j2 || 'BYE'}</p>
                         </div>
                         <div class="p-6 space-y-4">
@@ -530,8 +627,7 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">📅 Data e Hora da Partida *</label>
                                 <input type="datetime-local" id="modal-data-hora" 
                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent text-lg"
-                                       min="${new Date().toISOString().slice(0, 16)}"
-                                       value="${new Date(Date.now() + 86400000).toISOString().slice(0, 16)}">
+                                       value="${dataHoraValue}">
                                 <p class="text-xs text-gray-500 mt-1">Selecione a data e horário do confronto</p>
                             </div>
                             
@@ -539,11 +635,12 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">📍 Local da Partida *</label>
                                 <input type="text" id="modal-local" 
                                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent"
-                                       value="SENAI Morvan Figueiredo" placeholder="Ex: Biblioteca SENAI">
+                                       value="${localValue}" placeholder="Ex: Biblioteca SENAI">
                             </div>
 
                             ${!isBye ? `
                             <div class="border-t-2 pt-4">
+                                ${podeRegistrarResultado ? `
                                 <label class="flex items-center space-x-2 cursor-pointer mb-3">
                                     <input type="checkbox" id="modal-registrar-resultado" 
                                            class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
@@ -563,6 +660,12 @@
                                         <span class="font-medium">⚖️ Empate</span>
                                     </label>
                                 </div>
+                                ` : `
+                                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                                    <p class="text-yellow-800 font-semibold">⏰ O resultado só pode ser registrado após a data/hora da partida</p>
+                                    ${dataPartida ? `<p class="text-yellow-700 text-sm mt-1">Partida agendada para: ${dataPartida.toLocaleString('pt-BR')}</p>` : ''}
+                                </div>
+                                `}
                             </div>
                             ` : ''}
 
@@ -583,7 +686,7 @@
             
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             
-            if (!isBye) {
+            if (!isBye && podeRegistrarResultado) {
                 document.getElementById('modal-registrar-resultado').addEventListener('change', function() {
                     const opcoes = document.getElementById('modal-resultado-opcoes');
                     opcoes.classList.toggle('hidden', !this.checked);

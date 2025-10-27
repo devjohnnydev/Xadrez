@@ -16,7 +16,7 @@ from models import (
     init_db, get_db, Competidor, Torneio, Partida,
     Periodo, StatusTorneio, Fase, Resultado
 )
-from tournament import executar_sorteio, avancar_vencedor
+from tournament import executar_sorteio, avancar_vencedor, verificar_compatibilidades
 from availability import sao_compativeis
 from auth import verificar_admin, verificar_credenciais, criar_cookie_sessao, limpar_cookie_sessao
 
@@ -266,11 +266,25 @@ def listar_torneios(db: Session = Depends(get_db)):
     return db.query(Torneio).order_by(Torneio.created_at.desc()).all()
 
 
-@app.post("/api/torneios/{torneio_id}/sorteio")
-def sortear_torneio(request: Request, torneio_id: int, seed: Optional[int] = None, db: Session = Depends(get_db)):
+@app.get("/api/competidores/compatibilidade")
+def verificar_compatibilidade_competidores(request: Request, db: Session = Depends(get_db)):
     verificar_admin(request)
-    resultado = executar_sorteio(db, torneio_id, seed)
+    competidores = db.query(Competidor).all()
+    if len(competidores) < 2:
+        return {"error": "É necessário pelo menos 2 competidores"}
+    return verificar_compatibilidades(competidores)
+
+
+@app.post("/api/torneios/{torneio_id}/sorteio")
+def sortear_torneio(request: Request, torneio_id: int, seed: Optional[int] = None, force: bool = False, db: Session = Depends(get_db)):
+    verificar_admin(request)
+    resultado = executar_sorteio(db, torneio_id, seed, force)
     if "error" in resultado:
+        if "compatibilidade" in resultado:
+            return JSONResponse(
+                status_code=400,
+                content=resultado
+            )
         raise HTTPException(status_code=400, detail=resultado["error"])
     return resultado
 
@@ -311,6 +325,20 @@ def atualizar_partida(request: Request, partida_id: int, update: PartidaUpdate, 
     partida = db.query(Partida).filter(Partida.id == partida_id).first()
     if not partida:
         raise HTTPException(status_code=404, detail="Partida não encontrada")
+    
+    if update.vencedor_id is not None:
+        if partida.data_hora is None:
+            raise HTTPException(
+                status_code=400, 
+                detail="Não é possível registrar resultado sem agendar a partida primeiro"
+            )
+        
+        agora = datetime.now()
+        if partida.data_hora > agora:
+            raise HTTPException(
+                status_code=400,
+                detail=f"A partida ainda não aconteceu. Data agendada: {partida.data_hora.strftime('%d/%m/%Y %H:%M')}"
+            )
     
     if update.data_hora is not None:
         partida.data_hora = update.data_hora

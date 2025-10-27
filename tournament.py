@@ -17,9 +17,49 @@ def agrupar_por_disponibilidade(competidores: List[Competidor]) -> dict:
 
 def encontrar_par_compativel(jogador: Competidor, disponiveis: List[Competidor]) -> Optional[Competidor]:
     for candidato in disponiveis:
-        if sao_compativeis(jogador, candidato):
+        if candidato.id != jogador.id and sao_compativeis(jogador, candidato):
             return candidato
     return None
+
+
+def verificar_compatibilidades(competidores: List[Competidor]) -> dict:
+    incompatibilidades = []
+    competidores_sem_par = []
+    
+    for i, comp1 in enumerate(competidores):
+        tem_compativel = False
+        for j, comp2 in enumerate(competidores):
+            if i != j and sao_compativeis(comp1, comp2):
+                tem_compativel = True
+                break
+        
+        if not tem_compativel:
+            competidores_sem_par.append({
+                "id": comp1.id,
+                "nome": comp1.nome,
+                "periodo": comp1.periodo.value,
+                "dias_semana": comp1.dias_semana
+            })
+    
+    pares_verificados = set()
+    for i, comp1 in enumerate(competidores):
+        for j, comp2 in enumerate(competidores):
+            if i < j:
+                par_id = tuple(sorted([comp1.id, comp2.id]))
+                if par_id not in pares_verificados:
+                    pares_verificados.add(par_id)
+                    if not sao_compativeis(comp1, comp2):
+                        incompatibilidades.append({
+                            "competidor1": {"id": comp1.id, "nome": comp1.nome, "periodo": comp1.periodo.value, "dias_semana": comp1.dias_semana},
+                            "competidor2": {"id": comp2.id, "nome": comp2.nome, "periodo": comp2.periodo.value, "dias_semana": comp2.dias_semana}
+                        })
+    
+    return {
+        "total_competidores": len(competidores),
+        "competidores_sem_par": competidores_sem_par,
+        "total_incompatibilidades": len(incompatibilidades),
+        "incompatibilidades": incompatibilidades[:10]
+    }
 
 
 def criar_pares(competidores: List[Competidor], seed: Optional[int] = None) -> List[Tuple[Competidor, Optional[Competidor]]]:
@@ -43,13 +83,17 @@ def criar_pares(competidores: List[Competidor], seed: Optional[int] = None) -> L
         while len(grupo_embaralhado) >= 2:
             j1 = grupo_embaralhado.pop(0)
             j2 = grupo_embaralhado.pop(0)
-            pares.append((j1, j2))
-            processados.add(j1.id)
-            processados.add(j2.id)
+            
+            if j1.id != j2.id:
+                pares.append((j1, j2))
+                processados.add(j1.id)
+                processados.add(j2.id)
+            else:
+                grupo_embaralhado.append(j2)
         
         if grupo_embaralhado:
             jogador_sozinho = grupo_embaralhado[0]
-            disponiveis_outros = [c for c in todos_disponiveis if c.id not in processados]
+            disponiveis_outros = [c for c in todos_disponiveis if c.id not in processados and c.id != jogador_sozinho.id]
             
             par = encontrar_par_compativel(jogador_sozinho, disponiveis_outros)
             if par:
@@ -74,7 +118,7 @@ def determinar_fase_inicial(num_jogadores: int) -> Fase:
         return Fase.OITAVAS
 
 
-def executar_sorteio(db: Session, torneio_id: int, seed: Optional[int] = None) -> dict:
+def executar_sorteio(db: Session, torneio_id: int, seed: Optional[int] = None, force: bool = False) -> dict:
     torneio = db.query(Torneio).filter(Torneio.id == torneio_id).first()
     if not torneio:
         return {"error": "Torneio não encontrado"}
@@ -82,6 +126,14 @@ def executar_sorteio(db: Session, torneio_id: int, seed: Optional[int] = None) -
     competidores = db.query(Competidor).all()
     if len(competidores) < 2:
         return {"error": "É necessário pelo menos 2 competidores para realizar o sorteio"}
+    
+    if not force:
+        verificacao = verificar_compatibilidades(competidores)
+        if verificacao["competidores_sem_par"]:
+            return {
+                "error": "Existem competidores sem horários compatíveis",
+                "compatibilidade": verificacao
+            }
     
     pares = criar_pares(competidores, seed)
     

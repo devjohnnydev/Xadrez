@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 import csv
 import io
@@ -37,6 +37,8 @@ class CompetidorCreate(BaseModel):
 
 
 class CompetidorResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     nome: str
     curso: str
@@ -45,23 +47,19 @@ class CompetidorResponse(BaseModel):
     dias_semana: str
     foto_url: Optional[str]
 
-    class Config:
-        from_attributes = True
-
 
 class TorneioCreate(BaseModel):
     nome: str
 
 
 class TorneioResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     nome: str
     status: str
     seed: Optional[int]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class PartidaUpdate(BaseModel):

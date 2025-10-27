@@ -69,6 +69,43 @@ Sistema completo de gerenciamento de torneios de xadrez para o SENAI "Morvan Fig
 - **Autenticação**: HTTP Basic Auth
 - **Upload de Arquivos**: FastAPI File Upload
 
+## 🚀 Deploy em Produção
+
+### Render.com (Recomendado)
+
+O projeto está **totalmente configurado** para deploy no Render.com:
+
+#### Arquivos de Deploy Inclusos
+- ✅ `requirements.txt` - Todas as dependências Python com versões corretas
+- ✅ `render.yaml` - Configuração automática de serviço web
+- ✅ `build.sh` - Script de build executável
+- ✅ `.env.example` - Template de variáveis de ambiente
+- ✅ `DEPLOY.md` - Guia completo passo-a-passo de deploy
+
+#### Configuração de Deploy
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:10000`
+- **Porta**: 10000 (padrão do Render)
+- **Python**: 3.11+
+- **Workers**: 4 workers Gunicorn com Uvicorn
+- **Health Check**: Configurado automaticamente na rota `/`
+
+#### Deploy Automático
+1. Push código para GitHub
+2. Conectar repositório no Render
+3. Render lê `render.yaml` automaticamente
+4. Deploy feito! 🎉
+
+**Veja [DEPLOY.md](DEPLOY.md) para instruções detalhadas**
+
+### Observações de Produção
+- **Banco de Dados**: SQLite funciona, mas considere PostgreSQL para persistência
+- **Fotos**: Armazenadas localmente (efêmero no Render Free). Para produção, use S3/Cloudinary
+- **Credenciais**: Altere senha padrão em produção
+- **Segurança**: JWT + bcrypt já implementados ✅
+
+---
+
 ## Mudanças Recentes (27 de outubro de 2025)
 
 ### ✨ Novas Funcionalidades Implementadas (Manhã)

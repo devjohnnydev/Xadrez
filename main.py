@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form, Request, status
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ from models import (
 )
 from tournament import executar_sorteio, avancar_vencedor
 from availability import sao_compativeis
-from auth import verificar_admin
+from auth import verificar_admin, verificar_credenciais, criar_cookie_sessao, limpar_cookie_sessao
 
 app = FastAPI(title="Torneio de Xadrez SENAI - Morvan Figueiredo")
 
@@ -89,19 +89,57 @@ class PartidaResponse(BaseModel):
     is_bye: bool
 
 
+class LoginRequest(BaseModel):
+    email: str
+    senha: str
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse("public.html", {"request": request})
 
 
+@app.get("/login", response_class=HTMLResponse)
+async def pagina_login(request: Request):
+    """Página de login"""
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.post("/api/login")
+async def fazer_login(login_data: LoginRequest, response: Response):
+    """Endpoint para fazer login"""
+    if not verificar_credenciais(login_data.email, login_data.senha):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="E-mail ou senha incorretos"
+        )
+    
+    criar_cookie_sessao(response, login_data.email)
+    return {"message": "Login realizado com sucesso", "email": login_data.email}
+
+
+@app.post("/api/logout")
+async def fazer_logout(response: Response):
+    """Endpoint para fazer logout"""
+    limpar_cookie_sessao(response)
+    return {"message": "Logout realizado com sucesso"}
+
+
 @app.get("/admin", response_class=HTMLResponse)
-async def admin(request: Request, admin: str = Depends(verificar_admin), db: Session = Depends(get_db)):
-    torneios = db.query(Torneio).order_by(Torneio.created_at.desc()).all()
-    return templates.TemplateResponse("admin.html", {"request": request, "torneios": torneios, "admin": admin})
+async def admin(request: Request, db: Session = Depends(get_db)):
+    """Área administrativa - requer autenticação"""
+    try:
+        admin_email = verificar_admin(request)
+        torneios = db.query(Torneio).order_by(Torneio.created_at.desc()).all()
+        return templates.TemplateResponse("admin.html", {"request": request, "torneios": torneios, "admin": admin_email})
+    except HTTPException:
+        # Se não autenticado, redireciona para login
+        return RedirectResponse(url="/login", status_code=302)
 
 
 @app.post("/api/competidores", response_model=CompetidorResponse)
-def criar_competidor(comp: CompetidorCreate, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
+def criar_competidor(request: Request, comp: CompetidorCreate, db: Session = Depends(get_db)):
+    verificar_admin(request)
     novo_comp = Competidor(
         nome=comp.nome,
         curso=comp.curso,
@@ -117,15 +155,16 @@ def criar_competidor(comp: CompetidorCreate, db: Session = Depends(get_db), admi
 
 @app.post("/api/competidores/form")
 async def criar_competidor_form(
+    request: Request,
     nome: str = Form(...),
     curso: str = Form(...),
     telefone: str = Form(...),
     periodo: str = Form(...),
     dias_semana: str = Form(...),
     foto: Optional[UploadFile] = File(None),
-    db: Session = Depends(get_db),
-    admin: str = Depends(verificar_admin)
+    db: Session = Depends(get_db)
 ):
+    verificar_admin(request)
     foto_url = None
     if foto and foto.filename:
         upload_dir = Path("static/uploads")
@@ -172,7 +211,8 @@ def listar_competidores(
 
 
 @app.post("/api/importar")
-async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
+async def importar_csv(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    verificar_admin(request)
     contents = await file.read()
     decoded = contents.decode('utf-8')
     csv_reader = csv.DictReader(io.StringIO(decoded))
@@ -211,7 +251,8 @@ async def importar_csv(file: UploadFile = File(...), db: Session = Depends(get_d
 
 
 @app.post("/api/torneios", response_model=TorneioResponse)
-def criar_torneio(torneio: TorneioCreate, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
+def criar_torneio(request: Request, torneio: TorneioCreate, db: Session = Depends(get_db)):
+    verificar_admin(request)
     novo_torneio = Torneio(
         nome=torneio.nome,
         status=StatusTorneio.RASCUNHO
@@ -228,7 +269,8 @@ def listar_torneios(db: Session = Depends(get_db)):
 
 
 @app.post("/api/torneios/{torneio_id}/sorteio")
-def sortear_torneio(torneio_id: int, seed: Optional[int] = None, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
+def sortear_torneio(request: Request, torneio_id: int, seed: Optional[int] = None, db: Session = Depends(get_db)):
+    verificar_admin(request)
     resultado = executar_sorteio(db, torneio_id, seed)
     if "error" in resultado:
         raise HTTPException(status_code=400, detail=resultado["error"])
@@ -266,7 +308,8 @@ def listar_partidas(torneio_id: int, db: Session = Depends(get_db)):
 
 
 @app.patch("/api/partidas/{partida_id}")
-def atualizar_partida(partida_id: int, update: PartidaUpdate, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
+def atualizar_partida(request: Request, partida_id: int, update: PartidaUpdate, db: Session = Depends(get_db)):
+    verificar_admin(request)
     partida = db.query(Partida).filter(Partida.id == partida_id).first()
     if not partida:
         raise HTTPException(status_code=404, detail="Partida não encontrada")
@@ -319,7 +362,8 @@ def obter_campeao(torneio_id: int, db: Session = Depends(get_db)):
 
 
 @app.delete("/api/competidores/{competidor_id}")
-def deletar_competidor(competidor_id: int, db: Session = Depends(get_db), admin: str = Depends(verificar_admin)):
+def deletar_competidor(request: Request, competidor_id: int, db: Session = Depends(get_db)):
+    verificar_admin(request)
     competidor = db.query(Competidor).filter(Competidor.id == competidor_id).first()
     if not competidor:
         raise HTTPException(status_code=404, detail="Competidor não encontrado")
@@ -327,6 +371,36 @@ def deletar_competidor(competidor_id: int, db: Session = Depends(get_db), admin:
     db.delete(competidor)
     db.commit()
     return {"success": True}
+
+
+@app.get("/api/campeoes")
+def listar_campeoes(db: Session = Depends(get_db)):
+    """Lista todos os campeões de torneios finalizados"""
+    torneios_finalizados = db.query(Torneio).filter(
+        Torneio.status == StatusTorneio.FINALIZADO
+    ).order_by(Torneio.created_at.desc()).all()
+    
+    campeoes = []
+    for torneio in torneios_finalizados:
+        partida_final = db.query(Partida).filter(
+            Partida.torneio_id == torneio.id,
+            Partida.fase == Fase.FINAL
+        ).first()
+        
+        if partida_final and partida_final.vencedor_id:
+            campeao = db.query(Competidor).filter(Competidor.id == partida_final.vencedor_id).first()
+            if campeao:
+                campeoes.append({
+                    "torneio_id": torneio.id,
+                    "torneio_nome": torneio.nome,
+                    "torneio_data": torneio.created_at,
+                    "campeao_id": campeao.id,
+                    "campeao_nome": campeao.nome,
+                    "campeao_curso": campeao.curso,
+                    "campeao_foto": campeao.foto_url
+                })
+    
+    return campeoes
 
 
 if __name__ == "__main__":

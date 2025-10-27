@@ -26,10 +26,13 @@
                     <h1 class="text-4xl font-bold">🔐 Área do Administrador</h1>
                     <p class="text-red-100 mt-2 text-xl">SENAI "Morvan Figueiredo" - Gerenciamento do Torneio</p>
                 </div>
-                <div>
+                <div class="flex gap-3">
                     <a href="/" class="bg-white text-senai-red px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition shadow-lg">
-                        ← Voltar para Área Pública
+                        ← Área Pública
                     </a>
+                    <button onclick="fazerLogout()" class="bg-red-900 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-800 transition shadow-lg">
+                        🚪 Sair
+                    </button>
                 </div>
             </div>
         </header>
@@ -504,26 +507,134 @@
             }
         }
 
-        function abrirModalPartida(id, j1, j2, isBye) {
-            const dataHora = prompt('Data e hora (formato: YYYY-MM-DD HH:MM):', new Date().toISOString().slice(0, 16).replace('T', ' '));
-            if (!dataHora) return;
+        async function fazerLogout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                window.location.href = '/login';
+            }
+        }
 
-            const local = prompt('Local da partida:', 'SENAI Morvan Figueiredo');
+        function abrirModalPartida(id, j1, j2, isBye) {
+            const modalHtml = `
+                <div id="modal-partida" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <div class="bg-gradient-to-r from-senai-red to-senai-dark text-white p-6 rounded-t-2xl">
+                            <h3 class="text-2xl font-bold">📅 Agendar Partida</h3>
+                            <p class="text-red-100 mt-1">${j1} vs ${j2 || 'BYE'}</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">📅 Data e Hora da Partida *</label>
+                                <input type="datetime-local" id="modal-data-hora" 
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent text-lg"
+                                       min="${new Date().toISOString().slice(0, 16)}"
+                                       value="${new Date(Date.now() + 86400000).toISOString().slice(0, 16)}">
+                                <p class="text-xs text-gray-500 mt-1">Selecione a data e horário do confronto</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">📍 Local da Partida *</label>
+                                <input type="text" id="modal-local" 
+                                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-senai-red focus:border-transparent"
+                                       value="SENAI Morvan Figueiredo" placeholder="Ex: Biblioteca SENAI">
+                            </div>
+
+                            ${!isBye ? `
+                            <div class="border-t-2 pt-4">
+                                <label class="flex items-center space-x-2 cursor-pointer mb-3">
+                                    <input type="checkbox" id="modal-registrar-resultado" 
+                                           class="w-5 h-5 text-senai-red focus:ring-senai-red rounded">
+                                    <span class="font-semibold text-gray-700">🏆 Registrar resultado da partida agora</span>
+                                </label>
+                                <div id="modal-resultado-opcoes" class="hidden space-y-2 ml-7">
+                                    <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                        <input type="radio" name="vencedor" value="j1" class="w-5 h-5 text-senai-red focus:ring-senai-red">
+                                        <span class="font-medium">${j1}</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                        <input type="radio" name="vencedor" value="j2" class="w-5 h-5 text-senai-red focus:ring-senai-red">
+                                        <span class="font-medium">${j2}</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-senai-red transition">
+                                        <input type="radio" name="vencedor" value="empate" class="w-5 h-5 text-senai-red focus:ring-senai-red">
+                                        <span class="font-medium">⚖️ Empate</span>
+                                    </label>
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <div class="flex gap-3 pt-4">
+                                <button onclick="fecharModal()" 
+                                        class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-300 transition">
+                                    Cancelar
+                                </button>
+                                <button onclick="salvarPartida(${id})" 
+                                        class="flex-1 bg-gradient-to-r from-senai-red to-senai-dark text-white px-6 py-3 rounded-lg font-bold hover:shadow-xl transition transform hover:scale-105">
+                                    💾 Salvar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            if (!isBye) {
+                document.getElementById('modal-registrar-resultado').addEventListener('change', function() {
+                    const opcoes = document.getElementById('modal-resultado-opcoes');
+                    opcoes.classList.toggle('hidden', !this.checked);
+                });
+            }
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('modal-partida');
+            if (modal) modal.remove();
+        }
+
+        async function salvarPartida(id) {
+            const dataHora = document.getElementById('modal-data-hora').value;
+            const local = document.getElementById('modal-local').value;
+            
+            if (!dataHora || !local) {
+                alert('Por favor, preencha data/hora e local da partida');
+                return;
+            }
+
+            let resultado = null;
             let vencedorId = null;
-            if (!isBye && confirm('Deseja registrar o resultado agora?')) {
-                const vencedor = prompt(`Quem venceu?\n1 - ${j1}\n2 - ${j2}\n3 - Empate`, '');
-                if (vencedor === '1' || vencedor === '2') {
-                    vencedorId = vencedor === '1' ? 'j1' : 'j2';
-                } else if (vencedor === '3') {
-                    vencedorId = 'empate';
+            
+            const registrarResultado = document.getElementById('modal-registrar-resultado');
+            if (registrarResultado && registrarResultado.checked) {
+                const vencedorRadio = document.querySelector('input[name="vencedor"]:checked');
+                if (!vencedorRadio) {
+                    alert('Por favor, selecione o vencedor da partida');
+                    return;
+                }
+                resultado = vencedorRadio.value;
+                
+                // Buscar os IDs dos jogadores
+                const partidaResponse = await fetch(`/api/torneios/${document.getElementById('torneio-partidas').value}/partidas`);
+                const partidas = await partidaResponse.json();
+                const partida = partidas.find(p => p.id === id);
+                
+                if (resultado === 'j1') {
+                    vencedorId = partida.jogador1_id;
+                } else if (resultado === 'j2') {
+                    vencedorId = partida.jogador2_id;
                 }
             }
 
-            atualizarPartida(id, dataHora, local, vencedorId);
+            const dataHoraISO = new Date(dataHora).toISOString();
+            await atualizarPartida(id, dataHoraISO, local, resultado, vencedorId);
+            fecharModal();
         }
 
-        async function atualizarPartida(id, dataHora, local, resultado) {
+        async function atualizarPartida(id, dataHora, local, resultado, vencedorId) {
             try {
                 const body = {
                     data_hora: dataHora,
@@ -533,6 +644,10 @@
                 if (resultado) {
                     body.resultado = resultado;
                 }
+                
+                if (vencedorId) {
+                    body.vencedor_id = vencedorId;
+                }
 
                 const response = await fetch(`/api/partidas/${id}`, {
                     method: 'PATCH',
@@ -541,11 +656,13 @@
                 });
 
                 if (response.ok) {
-                    alert('Partida atualizada com sucesso!');
+                    alert('✓ Partida atualizada com sucesso!');
                     carregarPartidas();
+                } else {
+                    throw new Error('Erro ao atualizar');
                 }
             } catch (error) {
-                alert('Erro ao atualizar partida');
+                alert('✗ Erro ao atualizar partida');
             }
         }
 

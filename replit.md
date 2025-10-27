@@ -69,27 +69,45 @@ Sistema completo de gerenciamento de torneios de xadrez para o SENAI "Morvan Fig
 - **Autenticação**: HTTP Basic Auth
 - **Upload de Arquivos**: FastAPI File Upload
 
-## Mudanças Recentes (26 de outubro de 2025)
+## Mudanças Recentes (27 de outubro de 2025)
 
-### Sistema de Autenticação
-- Implementado HTTP Basic Auth para área administrativa
-- Separação clara entre área pública e administrativa
-- Todos os endpoints de modificação protegidos
+### ✨ Novas Funcionalidades Implementadas
 
-### Dias da Semana
-- **Antes**: Enum rígido de dias
-- **Agora**: String com checkboxes individuais (seg,ter,qua,qui,sex)
-- Flexibilidade total na seleção de disponibilidade
+#### 1. Sistema de Autenticação Moderno
+- **Tela de login dedicada** com design moderno e responsivo
+- **Sessões JWT** com cookies HttpOnly (proteção contra XSS)
+- **Hash de senhas** com bcrypt para segurança
+- **Botão de logout** na área administrativa
+- **Redirecionamento automático** para login se não autenticado
 
-### Upload de Fotos
-- Campo opcional no cadastro de competidores
-- Fotos salvas com timestamp único
-- Exibição em toda interface (partidas, chaveamento, resultados)
+**Credenciais de Login:**
+- Email: `Biblioteca@senaimovanfigueiredo.com.br`
+- Senha: `biblioteca103103`
 
-### Identidade Visual
-- **Antes**: Azul e branco
-- **Agora**: Vermelho SENAI (#E30613) e branco
-- Interface mais profissional e alinhada com a marca SENAI
+#### 2. Calendário Moderno para Agendamento
+- **Date-time picker HTML5** nativo para selecionar data e hora
+- **Modal bonito** substituindo prompts simples
+- **Registro de resultados** diretamente no agendamento
+- **Validação de campos** obrigatórios
+
+#### 3. Histórico de Campeões
+- **Nova aba "Histórico de Campeões"** na área pública
+- **Visualização de todos os campeões** de torneios finalizados
+- **Medalhas** para os 3 primeiros (🥇🥈🥉)
+- **Fotos e informações** completas dos campeões
+- **Data do torneio** para cada conquista
+
+#### 4. Sistema de Eliminatórias Completo
+- Sistema já existia e continua funcionando perfeitamente
+- **Múltiplas rodadas** até definir o campeão
+- **Avanço automático** de vencedores
+- **BYEs** tratados corretamente
+
+### Mudanças de Segurança
+- **JWT Secret Key**: Agora estável (não muda a cada reinício)
+- **Senhas hasheadas**: Bcrypt com custo 12
+- **Cookies seguros**: HttpOnly, SameSite=Lax, Secure em produção
+- **Sem plaintext**: Senhas nunca armazenadas em texto puro
 
 ## Como Usar
 
@@ -138,10 +156,13 @@ Sistema completo de gerenciamento de torneios de xadrez para o SENAI "Morvan Fig
 - BYEs são atribuídos quando número de inscritos não é potência de 2
 
 ### Segurança
-- Autenticação HTTP Basic em todos os endpoints administrativos
-- Credenciais comparadas com `secrets.compare_digest` para evitar timing attacks
-- Upload de fotos com nomes únicos baseados em timestamp
-- **Nota**: Para produção, recomenda-se hash de senhas e validação de tipo de arquivo
+- **Autenticação JWT** com sessões baseadas em cookies
+- **Hash bcrypt** para armazenamento seguro de senhas (custo 12)
+- **Cookies HttpOnly** para proteção contra XSS
+- **SameSite=Lax** para proteção contra CSRF
+- **Secure flag** habilitado automaticamente em produção
+- **Upload de fotos** com nomes únicos baseados em timestamp
+- **Variáveis de ambiente** para configurações sensíveis
 
 ## Scripts Úteis
 

@@ -71,7 +71,7 @@ Sistema completo de gerenciamento de torneios de xadrez para o SENAI "Morvan Fig
 
 ## Mudanças Recentes (27 de outubro de 2025)
 
-### ✨ Novas Funcionalidades Implementadas
+### ✨ Novas Funcionalidades Implementadas (Manhã)
 
 #### 1. Sistema de Autenticação Moderno
 - **Tela de login dedicada** com design moderno e responsivo
@@ -103,11 +103,40 @@ Sistema completo de gerenciamento de torneios de xadrez para o SENAI "Morvan Fig
 - **Avanço automático** de vencedores
 - **BYEs** tratados corretamente
 
+### ✨ Melhorias Implementadas (Tarde)
+
+#### 5. Página Pública com Carregamento Automático
+- **Torneio ativo carrega automaticamente** na página pública
+- Mostra automaticamente o torneio mais recente (sorteado ou em andamento)
+- Exibe informações do torneio ativo sem precisar selecionar
+
+#### 6. Validação de Auto-Confronto
+- **Impossível jogar contra si mesmo** - validação adicional no algoritmo de pareamento
+- Verificação em múltiplos pontos (criar_pares e encontrar_par_compativel)
+- Proteção contra bugs no sorteio
+
+#### 7. Sistema de Verificação de Compatibilidade
+- **Botão "Verificar Compatibilidade"** na área de sorteio
+- **Relatório detalhado** mostrando:
+  - Total de competidores
+  - Competidores sem horários compatíveis com ninguém
+  - Lista de incompatibilidades
+- **Sorteio bloqueado** se houver competidores sem pares compatíveis
+- **Opção de forçar** sorteio mesmo com incompatibilidades (para admin decidir)
+
+#### 8. Validação Temporal de Resultados
+- **Resultados só podem ser registrados APÓS a data do jogo**
+- Validação no backend (API retorna erro se tentar antes da hora)
+- Validação no frontend (checkbox desabilitado antes da data)
+- Mensagem clara mostrando quando a partida está agendada
+- Proteção contra registros prematuros ou fraudulentos
+
 ### Mudanças de Segurança
 - **JWT Secret Key**: Agora estável (não muda a cada reinício)
 - **Senhas hasheadas**: Bcrypt com custo 12
 - **Cookies seguros**: HttpOnly, SameSite=Lax, Secure em produção
 - **Sem plaintext**: Senhas nunca armazenadas em texto puro
+- **Endpoint de compatibilidade protegido**: Requer autenticação administrativa
 
 ## Como Usar
 

@@ -178,10 +178,26 @@ python export_csv.py 1
 - ✅ Upload de fotos com nomes únicos baseados em timestamp
 
 **Para produção:**
-- Considere hash de senhas (bcrypt)
+- ✅ Hash de senhas com bcrypt (já implementado)
 - Adicione validação de tipo de arquivo em uploads
 - Configure CORS adequadamente
-- Migre para PostgreSQL
+- Migre para PostgreSQL (opcional)
+
+## 🚀 Deploy em Produção
+
+Este projeto está pronto para deploy no **Render.com**!
+
+Veja o guia completo de deploy em **[DEPLOY.md](DEPLOY.md)**
+
+**Comandos de Deploy:**
+- **Build**: `pip install -r requirements.txt`
+- **Start**: `gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:10000`
+
+**Arquivos inclusos para deploy:**
+- ✅ `requirements.txt` - Dependências Python
+- ✅ `render.yaml` - Configuração automática Render
+- ✅ `build.sh` - Script de build
+- ✅ `.env.example` - Exemplo de variáveis de ambiente
 
 ## 🆘 Solução de Problemas
 
